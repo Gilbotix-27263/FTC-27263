@@ -26,6 +26,7 @@ public class FTCFirstProgram extends LinearOpMode {
         motor3 = hardwareMap.get(DcMotor.class, "motor3");
         motor4 = hardwareMap.get(DcMotor.class, "motor4");
 
+        // Set motor directions
         motor1.setDirection(DcMotor.Direction.FORWARD);
         motor2.setDirection(DcMotor.Direction.REVERSE);
         motor3.setDirection(DcMotor.Direction.FORWARD);
@@ -53,17 +54,11 @@ public class FTCFirstProgram extends LinearOpMode {
     }
 
     private void setMotorPowers(double drive, double turn, double sideDrive) {
-        // Calculate power for each motor based on input
-        double frontLeftPower = drive + turn + sideDrive;
-        double frontRightPower = drive - turn - sideDrive;
-        double backLeftPower = drive + turn - sideDrive;
-        double backRightPower = drive - turn + sideDrive;
-
-        // Adjust for strafing: Left wheels move one direction, right wheels move opposite
-        frontLeftPower = drive + turn + sideDrive; // Front left: drive + turn + strafe
-        frontRightPower = drive - turn - sideDrive; // Front right: drive - turn - strafe
-        backLeftPower = drive + turn - sideDrive; // Back left: drive + turn - strafe
-        backRightPower = drive - turn + sideDrive; // Back right: drive - turn + strafe
+        // Calculate power for each motor
+        double frontLeftPower = drive + turn + sideDrive;  // Clockwise during strafe
+        double frontRightPower = drive - turn - sideDrive; // Counterclockwise during strafe
+        double backLeftPower = drive + turn - sideDrive;   // Counterclockwise during strafe
+        double backRightPower = drive - turn + sideDrive;  // Clockwise during strafe
 
         // Clip power values to ensure they're within the valid range
         frontLeftPower = Range.clip(frontLeftPower, -1.0, 1.0);
