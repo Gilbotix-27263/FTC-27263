@@ -62,8 +62,8 @@ public class FTCFirstProgram extends LinearOpMode {
         // Adjust for strafing: Left wheels move one direction, right wheels move opposite
         frontLeftPower = drive + turn + sideDrive; // Front left: drive + turn + strafe
         frontRightPower = drive - turn - sideDrive; // Front right: drive - turn - strafe
-        backLeftPower = drive + turn - sideDrive; // Back left: drive + turn - strafe
-        backRightPower = drive - turn + sideDrive; // Back right: drive - turn + strafe
+        backLeftPower = drive - turn + sideDrive; // Back left: drive + turn - strafe
+        backRightPower = drive + turn - sideDrive; // Back right: drive - turn + strafe
 
         // Clip power values to ensure they're within the valid range
         frontLeftPower = Range.clip(frontLeftPower, -1.0, 1.0);
