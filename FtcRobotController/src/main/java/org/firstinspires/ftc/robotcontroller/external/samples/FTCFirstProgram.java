@@ -26,7 +26,7 @@ public class FTCFirstProgram extends LinearOpMode {
         motor3 = hardwareMap.get(DcMotor.class, "motor3");
         motor4 = hardwareMap.get(DcMotor.class, "motor4");
 
-        // Set motor directions
+        // Set motor directions to default
         motor1.setDirection(DcMotor.Direction.FORWARD);
         motor2.setDirection(DcMotor.Direction.REVERSE);
         motor3.setDirection(DcMotor.Direction.FORWARD);
@@ -45,35 +45,62 @@ public class FTCFirstProgram extends LinearOpMode {
             double turn = gamepad1.right_stick_x; // Turning
             double sideDrive = gamepad1.left_stick_x; // Strafing (Sideways)
 
-            // Control motors for all movements
-            setMotorPowers(drive, turn, sideDrive);
+            // Control motors separately
+            if (Math.abs(drive) > 0.1) {
+                handleDrive(drive);
+            } else if (Math.abs(sideDrive) > 0.1) {
+                handleStrafe(sideDrive);
+            } else if (Math.abs(turn) > 0.1) {
+                handleTurn(turn);
+            } else {
+                // Stop all motors if no input is detected
+                stopAllMotors();
+            }
 
             telemetry.addData("Status", "Running");
             telemetry.update();
         }
     }
 
-    private void setMotorPowers(double drive, double turn, double sideDrive) {
-        // Calculate power for each motor
-        double frontLeftPower = drive + turn + sideDrive;  // Clockwise during strafe
-        double frontRightPower = drive - turn - sideDrive; // Counterclockwise during strafe
-        double backLeftPower = drive + turn - sideDrive;   // Counterclockwise during strafe
-        double backRightPower = drive - turn + sideDrive;  // Clockwise during strafe
+    private void handleDrive(double drive) {
+        // All motors move forward or backward equally
+        double power = Range.clip(drive, -1.0, 1.0);
+        motor1.setPower(power);
+        motor2.setPower(power);
+        motor3.setPower(power);
+        motor4.setPower(power);
 
-        // Clip power values to ensure they're within the valid range
-        frontLeftPower = Range.clip(frontLeftPower, -1.0, 1.0);
-        frontRightPower = Range.clip(frontRightPower, -1.0, 1.0);
-        backLeftPower = Range.clip(backLeftPower, -1.0, 1.0);
-        backRightPower = Range.clip(backRightPower, -1.0, 1.0);
+        telemetry.addData("Drive", "Power (%.2f)", power);
+    }
 
-        // Set motor powers
-        motor1.setPower(frontLeftPower);
-        motor2.setPower(frontRightPower);
-        motor3.setPower(backLeftPower);
-        motor4.setPower(backRightPower);
+    private void handleStrafe(double sideDrive) {
+        // Left wheels move opposite to right wheels for strafing
+        double power = Range.clip(sideDrive, -1.0, 1.0);
+        motor1.setPower(power);  // Front Left
+        motor2.setPower(-power); // Front Right
+        motor3.setPower(-power); // Back Left
+        motor4.setPower(power);  // Back Right
 
-        // Telemetry for debugging
-        telemetry.addData("Motor Powers", "FL (%.2f), FR (%.2f), BL (%.2f), BR (%.2f)",
-                frontLeftPower, frontRightPower, backLeftPower, backRightPower);
+        telemetry.addData("Strafe", "Power (%.2f)", power);
+    }
+
+    private void handleTurn(double turn) {
+        // Left and right wheels move in opposite directions for turning
+        double power = Range.clip(turn, -1.0, 1.0);
+        motor1.setPower(power);  // Front Left
+        motor2.setPower(-power); // Front Right
+        motor3.setPower(power);  // Back Left
+        motor4.setPower(-power); // Back Right
+
+        telemetry.addData("Turn", "Power (%.2f)", power);
+    }
+
+    private void stopAllMotors() {
+        motor1.setPower(0);
+        motor2.setPower(0);
+        motor3.setPower(0);
+        motor4.setPower(0);
+
+        telemetry.addData("Motors", "Stopped");
     }
 }
