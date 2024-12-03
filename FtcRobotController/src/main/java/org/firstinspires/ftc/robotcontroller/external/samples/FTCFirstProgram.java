@@ -66,8 +66,8 @@ public class FTCFirstProgram extends LinearOpMode {
         // All motors move forward or backward equally
         double power = Range.clip(drive, -1.0, 1.0);
         motor1.setPower(power);
-        motor2.setPower(power);
-        motor3.setPower(power);
+        motor2.setPower(-power);
+        motor3.setPower(-power);
         motor4.setPower(power);
 
         telemetry.addData("Drive", "Power (%.2f)", power);
@@ -77,9 +77,9 @@ public class FTCFirstProgram extends LinearOpMode {
         // Left wheels move opposite to right wheels for strafing
         double power = Range.clip(sideDrive, -1.0, 1.0);
         motor1.setPower(power);  // Front Left
-        motor2.setPower(-power); // Front Right
+        motor2.setPower(power); // Front Right
         motor3.setPower(-power); // Back Left
-        motor4.setPower(power);  // Back Right
+        motor4.setPower(-power);  // Back Right
 
         telemetry.addData("Strafe", "Power (%.2f)", power);
     }
