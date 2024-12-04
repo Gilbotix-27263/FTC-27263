@@ -57,16 +57,16 @@ public class FTCFirstProgram extends LinearOpMode {
 
         while (opModeIsActive()) {
             // Toggle speed with LB button
-            if (gamepad1.left_bumper && toggleTimer.seconds() > 5.0) {
+            if (gamepad1.left_bumper && toggleTimer.seconds() > 2.0) {
                 isSlowMode = !isSlowMode;
                 speedMultiplier = isSlowMode ? 0.3 : 1.0;
                 toggleTimer.reset();
             }
 
             // Read inputs
-            double drive = -gamepad1.left_stick_y * speedMultiplier; // Forward/Backward
-            double turn = gamepad1.right_stick_x * speedMultiplier; // Turning
-            double sideDrive = gamepad1.left_stick_x * speedMultiplier; // Strafing (Sideways)
+            double drive = gamepad1.left_stick_y * speedMultiplier; // Forward/Backward
+            double turn = -gamepad1.right_stick_x * speedMultiplier; // Turning
+            double sideDrive = -gamepad1.left_stick_x * speedMultiplier; // Strafing (Sideways)
 
             // Control motors separately
             if (Math.abs(drive) > 0.1) {
