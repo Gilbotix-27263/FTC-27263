@@ -63,26 +63,39 @@ public class FTCFirstProgram extends LinearOpMode {
                 toggleTimer.reset();
             }
 
-            // Read inputs
+            // Read inputs and scale them by the speed multiplier
             double drive = gamepad1.left_stick_y * speedMultiplier; // Forward/Backward
             double turn = -gamepad1.right_stick_x * speedMultiplier; // Turning
-            double sideDrive = -gamepad1.left_stick_x * speedMultiplier; // Strafing (Sideways)
+            double strafe = -gamepad1.left_stick_x * speedMultiplier; // Strafing (Sideways)
 
-            // Control motors separately
-            if (Math.abs(drive) > 0.1) {
-                handleDrive(drive);
-            } else if (Math.abs(sideDrive) > 0.1) {
-                handleStrafe(sideDrive);
-            } else if (Math.abs(turn) > 0.1) {
-                handleTurn(turn);
-            } else {
-                // Stop all motors if no input is detected
-                stopAllMotors();
-            }
+            // Combine inputs for smooth control
+            double frontLeftPower = drive + turn + strafe;
+            double frontRightPower = drive - turn - strafe;
+            double backLeftPower = drive + turn - strafe;
+            double backRightPower = drive - turn + strafe;
+
+            // Normalize the powers if any exceed 1.0
+            double maxPower = Math.max(1.0, Math.abs(frontLeftPower));
+            maxPower = Math.max(maxPower, Math.abs(frontRightPower));
+            maxPower = Math.max(maxPower, Math.abs(backLeftPower));
+            maxPower = Math.max(maxPower, Math.abs(backRightPower));
+
+            frontLeftPower /= maxPower;
+            frontRightPower /= maxPower;
+            backLeftPower /= maxPower;
+            backRightPower /= maxPower;
+
+            // Set motor powers
+            motor1.setPower(frontLeftPower);
+            motor2.setPower(frontRightPower);
+            motor3.setPower(backLeftPower);
+            motor4.setPower(backRightPower);
 
             // Telemetry
             telemetry.addData("Speed Mode", isSlowMode ? "Slow" : "Fast");
             telemetry.addData("Speed Multiplier", "%.2f", speedMultiplier);
+            telemetry.addData("Motor Powers", "FL: %.2f, FR: %.2f, BL: %.2f, BR: %.2f",
+                    frontLeftPower, frontRightPower, backLeftPower, backRightPower);
             telemetry.addData("Motor Positions", "FL: %d, FR: %d, BL: %d, BR: %d",
                     motor1.getCurrentPosition(),
                     motor2.getCurrentPosition(),
@@ -90,47 +103,5 @@ public class FTCFirstProgram extends LinearOpMode {
                     motor4.getCurrentPosition());
             telemetry.update();
         }
-    }
-
-    private void handleDrive(double drive) {
-        // All motors move forward or backward equally
-        double power = Range.clip(drive, -1.0, 1.0);
-        motor1.setPower(power);
-        motor2.setPower(-power);
-        motor3.setPower(-power);
-        motor4.setPower(power);
-
-        telemetry.addData("Drive", "Power (%.2f)", power);
-    }
-
-    private void handleStrafe(double sideDrive) {
-        // Left wheels move opposite to right wheels for strafing
-        double power = Range.clip(sideDrive, -1.0, 1.0);
-        motor1.setPower(power);  // Front Left
-        motor2.setPower(power); // Front Right
-        motor3.setPower(-power); // Back Left
-        motor4.setPower(-power);  // Back Right
-
-        telemetry.addData("Strafe", "Power (%.2f)", power);
-    }
-
-    private void handleTurn(double turn) {
-        // Left and right wheels move in opposite directions for turning
-        double power = Range.clip(turn, -1.0, 1.0);
-        motor1.setPower(power);  // Front Left
-        motor2.setPower(-power); // Front Right
-        motor3.setPower(power);  // Back Left
-        motor4.setPower(-power); // Back Right
-
-        telemetry.addData("Turn", "Power (%.2f)", power);
-    }
-
-    private void stopAllMotors() {
-        motor1.setPower(0);
-        motor2.setPower(0);
-        motor3.setPower(0);
-        motor4.setPower(0);
-
-        telemetry.addData("Motors", "Stopped");
     }
 }
