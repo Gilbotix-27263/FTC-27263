@@ -22,6 +22,8 @@ public class FTCFirstProgram extends LinearOpMode {
     private boolean isSlowMode = false;
     private ElapsedTime toggleTimer = new ElapsedTime(); // Timer for LB toggle cooldown
 
+    private static final int TICKS_PER_REV = 1440; // Replace with your motor's ticks per revolution
+
     @Override
     public void runOpMode() throws InterruptedException {
         // Initialize hardware
@@ -68,10 +70,10 @@ public class FTCFirstProgram extends LinearOpMode {
             double turn = -gamepad1.right_stick_x * speedMultiplier; // Turning
             double strafe = -gamepad1.left_stick_x * speedMultiplier; // Strafing (Sideways)
 
-            // Combine inputs for smooth control
+            // Use provided function for motor powers
             double frontLeftPower = drive + turn + strafe;
-            double frontRightPower = - drive - turn + strafe;
-            double backLeftPower = - drive + turn - strafe;
+            double frontRightPower = -drive - turn + strafe;
+            double backLeftPower = -drive + turn - strafe;
             double backRightPower = drive - turn - strafe;
 
             // Normalize the powers if any exceed 1.0
@@ -94,14 +96,18 @@ public class FTCFirstProgram extends LinearOpMode {
             // Telemetry
             telemetry.addData("Speed Mode", isSlowMode ? "Slow" : "Fast");
             telemetry.addData("Speed Multiplier", "%.2f", speedMultiplier);
-            telemetry.addData("Motor Powers", "FL: %.2f, FR: %.2f, BL: %.2f, BR: %.2f",
-                    frontLeftPower, frontRightPower, backLeftPower, backRightPower);
-            telemetry.addData("Motor Positions", "FL: %d, FR: %d, BL: %d, BR: %d",
-                    motor1.getCurrentPosition(),
-                    motor2.getCurrentPosition(),
-                    motor3.getCurrentPosition(),
-                    motor4.getCurrentPosition());
+            telemetry.addData("Motor 1 (FL)", "PW: %.2f, POS: %.0f°", frontLeftPower, toDegrees(motor1.getCurrentPosition()));
+            telemetry.addData("Motor 2 (FR)", "PW: %.2f, POS: %.0f°", frontRightPower, toDegrees(motor2.getCurrentPosition()));
+            telemetry.addData("Motor 3 (BL)", "PW: %.2f, POS: %.0f°", backLeftPower, toDegrees(motor3.getCurrentPosition()));
+            telemetry.addData("Motor 4 (BR)", "PW: %.2f, POS: %.0f°", backRightPower, toDegrees(motor4.getCurrentPosition()));
             telemetry.update();
         }
+    }
+
+    /**
+     * Converts encoder ticks to degrees based on motor specifications.
+     */
+    private double toDegrees(int ticks) {
+        return (360.0 * ticks) / TICKS_PER_REV;
     }
 }
