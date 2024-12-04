@@ -19,6 +19,8 @@ public class FTCFirstProgram extends LinearOpMode {
     private DcMotor motor4 = null; // Back Right
 
     private double speedMultiplier = 1.0; // Default to full speed
+    private boolean isSlowMode = false;
+    private ElapsedTime toggleTimer = new ElapsedTime(); // Timer for LB toggle cooldown
 
     @Override
     public void runOpMode() throws InterruptedException {
@@ -27,6 +29,17 @@ public class FTCFirstProgram extends LinearOpMode {
         motor2 = hardwareMap.get(DcMotor.class, "motor2");
         motor3 = hardwareMap.get(DcMotor.class, "motor3");
         motor4 = hardwareMap.get(DcMotor.class, "motor4");
+
+        // Set motor mode to use encoders
+        motor1.setMode(DcMotor.RunMode.STOP_AND_RESET_ENCODER);
+        motor2.setMode(DcMotor.RunMode.STOP_AND_RESET_ENCODER);
+        motor3.setMode(DcMotor.RunMode.STOP_AND_RESET_ENCODER);
+        motor4.setMode(DcMotor.RunMode.STOP_AND_RESET_ENCODER);
+
+        motor1.setMode(DcMotor.RunMode.RUN_USING_ENCODER);
+        motor2.setMode(DcMotor.RunMode.RUN_USING_ENCODER);
+        motor3.setMode(DcMotor.RunMode.RUN_USING_ENCODER);
+        motor4.setMode(DcMotor.RunMode.RUN_USING_ENCODER);
 
         // Set motor directions to default
         motor1.setDirection(DcMotor.Direction.FORWARD);
@@ -40,17 +53,18 @@ public class FTCFirstProgram extends LinearOpMode {
         // Wait for the game to start
         waitForStart();
         runtime.reset();
+        toggleTimer.reset();
 
         while (opModeIsActive()) {
-            // Adjust speed based on LB button press
-            if (gamepad1.left_bumper) {
-                speedMultiplier = 0.3; // Limit speed to 30%
-            } else {
-                speedMultiplier = 1.0; // Full speed
+            // Toggle speed with LB button
+            if (gamepad1.left_bumper && toggleTimer.seconds() > 5.0) {
+                isSlowMode = !isSlowMode;
+                speedMultiplier = isSlowMode ? 0.3 : 1.0;
+                toggleTimer.reset();
             }
 
             // Read inputs
-            double drive = gamepad1.left_stick_y * speedMultiplier; // Forward/Backward
+            double drive = -gamepad1.left_stick_y * speedMultiplier; // Forward/Backward
             double turn = gamepad1.right_stick_x * speedMultiplier; // Turning
             double sideDrive = gamepad1.left_stick_x * speedMultiplier; // Strafing (Sideways)
 
@@ -66,8 +80,14 @@ public class FTCFirstProgram extends LinearOpMode {
                 stopAllMotors();
             }
 
+            // Telemetry
+            telemetry.addData("Speed Mode", isSlowMode ? "Slow" : "Fast");
             telemetry.addData("Speed Multiplier", "%.2f", speedMultiplier);
-            telemetry.addData("Status", "Running");
+            telemetry.addData("Motor Positions", "FL: %d, FR: %d, BL: %d, BR: %d",
+                    motor1.getCurrentPosition(),
+                    motor2.getCurrentPosition(),
+                    motor3.getCurrentPosition(),
+                    motor4.getCurrentPosition());
             telemetry.update();
         }
     }
