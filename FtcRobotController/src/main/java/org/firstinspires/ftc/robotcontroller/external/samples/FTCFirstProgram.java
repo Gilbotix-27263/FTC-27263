@@ -18,6 +18,8 @@ public class FTCFirstProgram extends LinearOpMode {
     private DcMotor motor3 = null; // Back Left
     private DcMotor motor4 = null; // Back Right
 
+    private double speedMultiplier = 1.0; // Default to full speed
+
     @Override
     public void runOpMode() throws InterruptedException {
         // Initialize hardware
@@ -40,10 +42,17 @@ public class FTCFirstProgram extends LinearOpMode {
         runtime.reset();
 
         while (opModeIsActive()) {
+            // Adjust speed based on LB button press
+            if (gamepad1.left_bumper) {
+                speedMultiplier = 0.3; // Limit speed to 30%
+            } else {
+                speedMultiplier = 1.0; // Full speed
+            }
+
             // Read inputs
-            double drive = -gamepad1.left_stick_y; // Forward/Backward
-            double turn = gamepad1.right_stick_x; // Turning
-            double sideDrive = gamepad1.left_stick_x; // Strafing (Sideways)
+            double drive = -gamepad1.left_stick_y * speedMultiplier; // Forward/Backward
+            double turn = gamepad1.right_stick_x * speedMultiplier; // Turning
+            double sideDrive = gamepad1.left_stick_x * speedMultiplier; // Strafing (Sideways)
 
             // Control motors separately
             if (Math.abs(drive) > 0.1) {
@@ -57,6 +66,7 @@ public class FTCFirstProgram extends LinearOpMode {
                 stopAllMotors();
             }
 
+            telemetry.addData("Speed Multiplier", "%.2f", speedMultiplier);
             telemetry.addData("Status", "Running");
             telemetry.update();
         }
