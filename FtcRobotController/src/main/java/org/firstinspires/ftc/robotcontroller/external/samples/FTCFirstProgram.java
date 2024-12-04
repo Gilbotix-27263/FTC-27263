@@ -70,9 +70,9 @@ public class FTCFirstProgram extends LinearOpMode {
 
             // Combine inputs for smooth control
             double frontLeftPower = drive + turn + strafe;
-            double frontRightPower = drive - turn - strafe;
-            double backLeftPower = drive + turn - strafe;
-            double backRightPower = drive - turn + strafe;
+            double frontRightPower = - drive - turn + strafe;
+            double backLeftPower = - drive + turn - strafe;
+            double backRightPower = drive - turn - strafe;
 
             // Normalize the powers if any exceed 1.0
             double maxPower = Math.max(1.0, Math.abs(frontLeftPower));
