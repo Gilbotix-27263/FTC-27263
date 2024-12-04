@@ -50,7 +50,7 @@ public class FTCFirstProgram extends LinearOpMode {
             }
 
             // Read inputs
-            double drive = -gamepad1.left_stick_y * speedMultiplier; // Forward/Backward
+            double drive = gamepad1.left_stick_y * speedMultiplier; // Forward/Backward
             double turn = gamepad1.right_stick_x * speedMultiplier; // Turning
             double sideDrive = gamepad1.left_stick_x * speedMultiplier; // Strafing (Sideways)
 
