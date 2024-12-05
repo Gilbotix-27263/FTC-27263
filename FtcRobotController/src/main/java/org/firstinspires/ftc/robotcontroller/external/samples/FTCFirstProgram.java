@@ -17,7 +17,7 @@ public class FTCFirstProgram extends LinearOpMode {
     private DcMotor motor2 = null; // Front Right
     private DcMotor motor3 = null; // Back Left
     private DcMotor motor4 = null; // Back Right
-
+    private double motorSpeed = 0.0; // intial motor speed
     @Override
     public void runOpMode() throws InterruptedException {
         // Initialize hardware
@@ -56,6 +56,19 @@ public class FTCFirstProgram extends LinearOpMode {
                 // Stop all motors if no input is detected
                 stopAllMotors();
             }
+            if (gamepad1.right_trigger > 0.1){
+                motorSpeed += 0.1;
+            } else if (gamepad1.left_trigger > 0.1) {
+                motorSpeed -= 0.1;
+            }
+            motorSpeed =    Math.max(-1.0, Math.min(1.0, motorSpeed));
+            motor1.setPower(motorSpeed);
+            motor2.setPower(motorSpeed);
+            motor3.setPower(motorSpeed);
+            motor4.setPower(motorSpeed);
+
+            telemetry.addData("Motor Speed", motorSpeed);
+            telemetry.update();
 
             telemetry.addData("Status", "Running");
             telemetry.update();
@@ -93,6 +106,7 @@ public class FTCFirstProgram extends LinearOpMode {
         motor4.setPower(-power); // Back Right
 
         telemetry.addData("Turn", "Power (%.2f)", power);
+        telemetry.update();
     }
 
     private void stopAllMotors() {
@@ -102,5 +116,6 @@ public class FTCFirstProgram extends LinearOpMode {
         motor4.setPower(0);
 
         telemetry.addData("Motors", "Stopped");
+        telemetry.update();
     }
 }
