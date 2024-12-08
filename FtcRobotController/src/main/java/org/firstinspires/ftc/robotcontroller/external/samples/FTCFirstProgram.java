@@ -1,9 +1,5 @@
 package org.firstinspires.ftc.robotcontroller.external.samples;
 
-import static org.firstinspires.ftc.robotcore.external.BlocksOpModeCompanion.gamepad1;
-import static org.firstinspires.ftc.robotcore.external.BlocksOpModeCompanion.hardwareMap;
-import static org.firstinspires.ftc.robotcore.external.BlocksOpModeCompanion.telemetry;
-
 import com.qualcomm.robotcore.eventloop.opmode.LinearOpMode;
 import com.qualcomm.robotcore.eventloop.opmode.TeleOp;
 import com.qualcomm.robotcore.hardware.DcMotor;
@@ -12,12 +8,14 @@ import com.qualcomm.robotcore.util.Range;
 
 @TeleOp
 public class FTCFirstProgram extends LinearOpMode {
+
     private ElapsedTime runtime = new ElapsedTime();
     private DcMotor motor1 = null; // Front Left
     private DcMotor motor2 = null; // Front Right
     private DcMotor motor3 = null; // Back Left
     private DcMotor motor4 = null; // Back Right
-    private double motorSpeed = 0.0; // intial motor speed
+    private double motorSpeed = 0.0; // Initial motor speed
+
     @Override
     public void runOpMode() throws InterruptedException {
         // Initialize hardware
@@ -56,12 +54,16 @@ public class FTCFirstProgram extends LinearOpMode {
                 // Stop all motors if no input is detected
                 stopAllMotors();
             }
-            if (gamepad1.right_trigger > 0.1){
+
+            // Adjust motor speed using triggers
+            if (gamepad1.right_trigger > 0.1) {
                 motorSpeed += 0.1;
             } else if (gamepad1.left_trigger > 0.1) {
                 motorSpeed -= 0.1;
             }
-            motorSpeed =    Math.max(-1.0, Math.min(1.0, motorSpeed));
+            motorSpeed = Math.max(-1.0, Math.min(1.0, motorSpeed));
+
+            // Set motor power based on speed
             motor1.setPower(motorSpeed);
             motor2.setPower(motorSpeed);
             motor3.setPower(motorSpeed);
@@ -106,7 +108,6 @@ public class FTCFirstProgram extends LinearOpMode {
         motor4.setPower(-power); // Back Right
 
         telemetry.addData("Turn", "Power (%.2f)", power);
-        telemetry.update();
     }
 
     private void stopAllMotors() {
