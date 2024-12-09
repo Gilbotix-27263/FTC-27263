@@ -13,8 +13,8 @@ public class servoEx extends LinearOpMode {
         // Initialize the servo
         arm = hardwareMap.get(Servo.class, "arm");
 
-        // Set the initial position of the servo
-        arm.setPosition(0.5); // Midpoint (Range is 0.0 to 1.0)
+        // Set the servo to stop by default
+        arm.setPosition(0.5); // 0.5 is neutral for continuous rotation servos
 
         telemetry.addData("Status", "Initialized");
         telemetry.addData("Servo Name", "arm");
@@ -24,24 +24,21 @@ public class servoEx extends LinearOpMode {
         waitForStart();
 
         while (opModeIsActive()) {
-            // Use gamepad triggers to control the servo position
-            double position = arm.getPosition(); // Get the current position
+            double power = 0.5; // Default to neutral (stopped)
+
+            // Use gamepad triggers to control the servo speed
             if (gamepad1.right_trigger > 0.1) {
-                position += 0.01; // Increase position
+                power = 0.5 + gamepad1.right_trigger * 0.5; // Rotate forward
+            } else if (gamepad1.left_trigger > 0.1) {
+                power = 0.5 - gamepad1.left_trigger * 0.5; // Rotate backward
             }
-            if (gamepad1.left_trigger > 0.1) {
-                position -= 0.01; // Decrease position
-            }
 
-            // Clamp the position to the valid range (0.0 to 1.0)
-            position = Math.max(0.0, Math.min(1.0, position));
+            // Set the servo power
+            arm.setPosition(power);
 
-            // Set the new position to the servo
-            arm.setPosition(position);
-
-            // Telemetry to display the servo position
+            // Telemetry to display the servo state
             telemetry.addData("Servo Name", "arm");
-            telemetry.addData("Servo Position", "%.2f", position);
+            telemetry.addData("Servo Power", "%.2f", power);
             telemetry.update();
         }
     }
