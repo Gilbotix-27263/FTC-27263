@@ -3,6 +3,7 @@ package org.firstinspires.ftc.robotcontroller.external.samples;
 import com.qualcomm.robotcore.eventloop.opmode.LinearOpMode;
 import com.qualcomm.robotcore.eventloop.opmode.TeleOp;
 import com.qualcomm.robotcore.hardware.DcMotor;
+import com.qualcomm.robotcore.hardware.DcMotorSimple;
 import com.qualcomm.robotcore.util.ElapsedTime;
 import com.qualcomm.robotcore.util.Range;
 
@@ -25,10 +26,10 @@ public class FTCFirstProgram extends LinearOpMode {
         motor4 = hardwareMap.get(DcMotor.class, "motor4");
 
         // Set motor directions to default
-        motor1.setDirection(DcMotor.Direction.FORWARD);
-        motor2.setDirection(DcMotor.Direction.REVERSE);
-        motor3.setDirection(DcMotor.Direction.FORWARD);
-        motor4.setDirection(DcMotor.Direction.REVERSE);
+        motor1.setDirection(DcMotor.Direction.REVERSE);
+        motor2.setDirection(DcMotor.Direction.FORWARD);
+        motor3.setDirection(DcMotor.Direction.REVERSE);
+        motor4.setDirection(DcMotor.Direction.FORWARD);
 
         telemetry.addData("Status", "Initialized");
         telemetry.update();
@@ -86,6 +87,7 @@ public class FTCFirstProgram extends LinearOpMode {
         motor4.setPower(power);
 
         telemetry.addData("Drive", "Power (%.2f)", power);
+        telemetry.update();
     }
 
     private void handleStrafe(double sideDrive) {
@@ -97,6 +99,7 @@ public class FTCFirstProgram extends LinearOpMode {
         motor4.setPower(-power);  // Back Right
 
         telemetry.addData("Strafe", "Power (%.2f)", power);
+        telemetry.update();
     }
 
     private void handleTurn(double turn) {
@@ -108,6 +111,7 @@ public class FTCFirstProgram extends LinearOpMode {
         motor4.setPower(-power); // Back Right
 
         telemetry.addData("Turn", "Power (%.2f)", power);
+        telemetry.update();
     }
 
     private void stopAllMotors() {
