@@ -6,39 +6,37 @@ import com.qualcomm.robotcore.hardware.Servo;
 
 @TeleOp
 public class servoEx extends LinearOpMode {
-    private Servo arm; // Servo instance for the arm
+    private Servo arm; // Motor controller connected as a servo
 
     @Override
     public void runOpMode() throws InterruptedException {
         // Initialize the servo
         arm = hardwareMap.get(Servo.class, "arm");
 
-        // Set the servo to stop by default
-        arm.setPosition(0.5); // 0.5 is neutral for continuous rotation servos
+        // Set initial position (neutral)
+        arm.setPosition(0.5); // Neutral position to stop the motor
 
         telemetry.addData("Status", "Initialized");
-        telemetry.addData("Servo Name", "arm");
         telemetry.update();
 
         // Wait for the game to start
         waitForStart();
 
         while (opModeIsActive()) {
-            double power = 0.5; // Default to neutral (stopped)
-
-            // Use gamepad triggers to control the servo speed
+            // Control motor using gamepad triggers
             if (gamepad1.right_trigger > 0.1) {
-                power = 0.5 + gamepad1.right_trigger * 0.5; // Rotate forward
+                // Forward rotation
+                arm.setPosition(0.5 + gamepad1.right_trigger * 0.5); // Forward speed
             } else if (gamepad1.left_trigger > 0.1) {
-                power = 0.5 - gamepad1.left_trigger * 0.5; // Rotate backward
+                // Reverse rotation
+                arm.setPosition(0.5 - gamepad1.left_trigger * 0.5); // Reverse speed
+            } else {
+                // Stop the motor
+                arm.setPosition(0.5); // Neutral position
             }
 
-            // Set the servo power
-            arm.setPosition(power);
-
-            // Telemetry to display the servo state
-            telemetry.addData("Servo Name", "arm");
-            telemetry.addData("Servo Power", "%.2f", power);
+            // Display servo position
+            telemetry.addData("Servo Position", "%.2f", arm.getPosition());
             telemetry.update();
         }
     }
