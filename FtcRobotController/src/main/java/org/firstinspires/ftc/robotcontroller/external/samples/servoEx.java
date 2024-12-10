@@ -27,10 +27,11 @@ public class servoEx extends LinearOpMode {
         while (opModeIsActive()) {
             // Increment or decrement position based on trigger input
             if (gamepad1.right_trigger > 0.1) {
-                currentPosition += gamepad1.right_trigger * 0.005; // Smaller increments for smooth movement
+                currentPosition += gamepad1.right_trigger * 0.5; // Smaller increments for smooth movement
             } else if (gamepad1.left_trigger > 0.1) {
-                currentPosition -= gamepad1.left_trigger * 0.005; // Smaller decrements for smooth movement
+                currentPosition -= gamepad1.left_trigger * 0.5; // Smaller decrements for smooth movement
             }
+
 
             // Clamp the position to the valid range (0.0 to 1.0)
             currentPosition = Math.max(0.0, Math.min(1.0, currentPosition));
