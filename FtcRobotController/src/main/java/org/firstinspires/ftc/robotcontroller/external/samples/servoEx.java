@@ -7,6 +7,8 @@ import com.qualcomm.robotcore.hardware.Servo;
 @TeleOp
 public class servoEx extends LinearOpMode {
     private Servo arm; // Motor controller connected as a servo
+    private static final double INCREMENT = 0.01; // Small increment for smoother movement
+    private static final long DELAY_MS = 50; // Delay in milliseconds to slow updates
 
     @Override
     public void runOpMode() throws InterruptedException {
@@ -25,13 +27,15 @@ public class servoEx extends LinearOpMode {
         waitForStart();
 
         while (opModeIsActive()) {
-            // Increment or decrement position based on trigger input
+            // Check input and update position
             if (gamepad1.right_trigger > 0.1) {
-                currentPosition += gamepad1.right_trigger * 0.5; // Smaller increments for smooth movement
+                currentPosition += INCREMENT; // Increment position
             } else if (gamepad1.left_trigger > 0.1) {
-                currentPosition -= gamepad1.left_trigger * 0.5; // Smaller decrements for smooth movement
+                currentPosition -= INCREMENT; // Decrement position
+            } else {
+                // Ensure no position change when triggers are not pressed
+                currentPosition = arm.getPosition(); // Maintain current position
             }
-
 
             // Clamp the position to the valid range (0.0 to 1.0)
             currentPosition = Math.max(0.0, Math.min(1.0, currentPosition));
@@ -39,9 +43,12 @@ public class servoEx extends LinearOpMode {
             // Update the servo position
             arm.setPosition(currentPosition);
 
-            // Display the servo position in telemetry
+            // Telemetry
             telemetry.addData("Servo Position", "%.2f", currentPosition);
             telemetry.update();
+
+            // Delay to slow down updates
+            sleep(DELAY_MS);
         }
     }
 }
