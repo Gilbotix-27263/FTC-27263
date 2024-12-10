@@ -13,8 +13,8 @@ public class servoEx extends LinearOpMode {
         // Initialize the servo
         arm = hardwareMap.get(Servo.class, "arm");
 
-        // Set initial position (neutral)
-        arm.setPosition(0.5); // Neutral position to stop the motor
+        // Set initial position to 0.00 (fully retracted or start position)
+        arm.setPosition(0.00);
 
         telemetry.addData("Status", "Initialized");
         telemetry.update();
@@ -25,15 +25,15 @@ public class servoEx extends LinearOpMode {
         while (opModeIsActive()) {
             // Control motor using gamepad triggers
             if (gamepad1.right_trigger > 0.1) {
-                // Forward rotation
-                arm.setPosition(0.5 + gamepad1.right_trigger * 0.5); // Forward speed
+                // Forward rotation (slower speed)
+                arm.setPosition(arm.getPosition() + gamepad1.right_trigger * 0.01); // Increment by a small amount
             } else if (gamepad1.left_trigger > 0.1) {
-                // Reverse rotation
-                arm.setPosition(0.5 - gamepad1.left_trigger * 0.5); // Reverse speed
-            } else {
-                // Stop the motor
-                arm.setPosition(0.5); // Neutral position
+                // Reverse rotation (slower speed)
+                arm.setPosition(arm.getPosition() - gamepad1.left_trigger * 0.01); // Decrement by a small amount
             }
+
+            // Clamp the position to the valid range (0.0 to 1.0)
+            arm.setPosition(Math.max(0.0, Math.min(1.0, arm.getPosition())));
 
             // Display servo position
             telemetry.addData("Servo Position", "%.2f", arm.getPosition());
