@@ -7,7 +7,7 @@ import com.qualcomm.robotcore.hardware.Servo;
 @TeleOp
 public class servoEx extends LinearOpMode {
     private Servo arm; // Motor controller connected as a servo
-    private static final double INCREMENT = 0.01; // Small increment for smoother movement
+    private static final double INCREMENT = 0.05; // Small increment for smoother movement
     private static final long DELAY_MS = 50; // Delay in milliseconds to slow updates
 
     @Override
@@ -16,7 +16,7 @@ public class servoEx extends LinearOpMode {
         arm = hardwareMap.get(Servo.class, "arm");
 
         // Set initial position to 0.00 (fully retracted or start position)
-        arm.setPosition(0.00);
+        arm.setPosition(0.50);
 
         telemetry.addData("Status", "Initialized");
         telemetry.update();
@@ -48,7 +48,7 @@ public class servoEx extends LinearOpMode {
             telemetry.update();
 
             // Delay to slow down updates
-            sleep(DELAY_MS);
+
         }
     }
 }
