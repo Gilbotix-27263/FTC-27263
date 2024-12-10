@@ -19,24 +19,27 @@ public class servoEx extends LinearOpMode {
         telemetry.addData("Status", "Initialized");
         telemetry.update();
 
+        double currentPosition = 0.00; // Track the current position
+
         // Wait for the game to start
         waitForStart();
 
         while (opModeIsActive()) {
-            // Control motor using gamepad triggers
+            // Increment or decrement position based on trigger input
             if (gamepad1.right_trigger > 0.1) {
-                // Forward rotation (slower speed)
-                arm.setPosition(arm.getPosition() + gamepad1.right_trigger * 0.01); // Increment by a small amount
+                currentPosition += gamepad1.right_trigger * 0.005; // Smaller increments for smooth movement
             } else if (gamepad1.left_trigger > 0.1) {
-                // Reverse rotation (slower speed)
-                arm.setPosition(arm.getPosition() - gamepad1.left_trigger * 0.01); // Decrement by a small amount
+                currentPosition -= gamepad1.left_trigger * 0.005; // Smaller decrements for smooth movement
             }
 
             // Clamp the position to the valid range (0.0 to 1.0)
-            arm.setPosition(Math.max(0.0, Math.min(1.0, arm.getPosition())));
+            currentPosition = Math.max(0.0, Math.min(1.0, currentPosition));
 
-            // Display servo position
-            telemetry.addData("Servo Position", "%.2f", arm.getPosition());
+            // Update the servo position
+            arm.setPosition(currentPosition);
+
+            // Display the servo position in telemetry
+            telemetry.addData("Servo Position", "%.2f", currentPosition);
             telemetry.update();
         }
     }
