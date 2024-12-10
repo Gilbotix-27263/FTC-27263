@@ -5,7 +5,7 @@ import com.qualcomm.robotcore.eventloop.opmode.TeleOp;
 import com.qualcomm.robotcore.hardware.DcMotor;
 
 @TeleOp
-public class servoEx extends LinearOpMode {
+public class ArmEx extends LinearOpMode {
     private DcMotor arm; // DC motor with encoder for the arm
     private static final double MAX_POWER = 0.8; // Maximum motor power for movement
     private static final double HOLDING_POWER = 0.5; // Power for holding position (adjust experimentally)
