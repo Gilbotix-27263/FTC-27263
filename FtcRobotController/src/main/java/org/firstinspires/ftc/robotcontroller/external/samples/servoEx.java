@@ -15,40 +15,43 @@ public class servoEx extends LinearOpMode {
         // Initialize the servo
         arm = hardwareMap.get(Servo.class, "arm");
 
-        // Set initial position to 0.00 (fully retracted or start position)
+        // Set initial position to 0.50 (neutral or midpoint)
         arm.setPosition(0.50);
 
         telemetry.addData("Status", "Initialized");
         telemetry.update();
 
-        double currentPosition = 0.00; // Track the current position
+        double currentPosition = 0.50; // Track the current position
 
         // Wait for the game to start
         waitForStart();
 
         while (opModeIsActive()) {
+            boolean updated = false; // Track whether the servo was updated
+
             // Check input and update position
             if (gamepad1.right_trigger > 0.1) {
                 currentPosition += INCREMENT; // Increment position
+                updated = true;
             } else if (gamepad1.left_trigger > 0.1) {
                 currentPosition -= INCREMENT; // Decrement position
-            } else {
-                // Ensure no position change when triggers are not pressed
-                currentPosition = arm.getPosition(); // Maintain current position
+                updated = true;
             }
 
             // Clamp the position to the valid range (0.0 to 1.0)
             currentPosition = Math.max(0.0, Math.min(1.0, currentPosition));
 
-            // Update the servo position
-            arm.setPosition(currentPosition);
+            // Update the servo position only if there was a trigger input
+            if (updated) {
+                arm.setPosition(currentPosition);
+            }
 
             // Telemetry
             telemetry.addData("Servo Position", "%.2f", currentPosition);
             telemetry.update();
 
             // Delay to slow down updates
-
+            sleep(DELAY_MS);
         }
     }
 }
