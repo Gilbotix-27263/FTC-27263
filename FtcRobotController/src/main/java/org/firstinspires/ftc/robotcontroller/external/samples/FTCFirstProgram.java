@@ -36,10 +36,23 @@ public class FTCFirstProgram extends LinearOpMode {
         arm = hardwareMap.get(DcMotor.class, "arm");
 
         // Initialize IMU
+// Initialize IMU
         imu = hardwareMap.get(BNO055IMU.class, "imu");
         BNO055IMU.Parameters parameters = new BNO055IMU.Parameters();
         parameters.angleUnit = BNO055IMU.AngleUnit.DEGREES;
+        parameters.accelUnit = BNO055IMU.AccelUnit.METERS_PERSEC_PERSEC;
+        parameters.loggingEnabled = false; // Optional logging
+
         imu.initialize(parameters);
+
+// Wait for calibration
+        while (!imu.isGyroCalibrated() && !isStopRequested()) {
+            telemetry.addData("IMU Status", "Calibrating...");
+            telemetry.update();
+        }
+
+        telemetry.addData("IMU Status", "Calibrated");
+        telemetry.update();
 
         // Set drive motors to use encoders
         motor1.setMode(DcMotor.RunMode.STOP_AND_RESET_ENCODER);
