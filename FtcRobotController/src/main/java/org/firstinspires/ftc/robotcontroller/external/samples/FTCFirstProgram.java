@@ -16,9 +16,7 @@ public class FTCFirstProgram extends LinearOpMode {
     private DcMotor motor3 = null; // Back Left
     private DcMotor motor4 = null; // Back Right
     private DcMotor arm; // Arm motor without encoder
-    private BNO055IMU imu; // IMU for gyro
-
-    private double speedMultiplier = 1.0; // Default to full speed
+    private double speedMultiplier = 1.0; // Default to Null speed
     private boolean isSlowMode = false;
     private ElapsedTime toggleTimer = new ElapsedTime(); // Timer for LB toggle cooldown
 
@@ -35,35 +33,6 @@ public class FTCFirstProgram extends LinearOpMode {
         motor4 = hardwareMap.get(DcMotor.class, "motor4");
         arm = hardwareMap.get(DcMotor.class, "arm");
 
-// Initialize IMU
-        imu = hardwareMap.get(BNO055IMU.class, "imu");
-        BNO055IMU.Parameters parameters = new BNO055IMU.Parameters();
-        parameters.angleUnit = BNO055IMU.AngleUnit.DEGREES;
-        parameters.accelUnit = BNO055IMU.AccelUnit.METERS_PERSEC_PERSEC;
-        parameters.loggingEnabled = false;
-
-        imu.initialize(parameters);
-
-// Wait for IMU calibration
-        long startTime = System.currentTimeMillis();
-        while (!imu.isGyroCalibrated() && !isStopRequested()) {
-            telemetry.addData("IMU Status", "Calibrating...");
-            telemetry.update();
-
-            // Timeout after 5 seconds
-            if (System.currentTimeMillis() - startTime > 5000) {
-                telemetry.addData("IMU Status", "Calibration Timeout");
-                telemetry.update();
-                break;
-            }
-        }
-
-        if (imu.isGyroCalibrated()) {
-            telemetry.addData("IMU Status", "Calibrated");
-        } else {
-            telemetry.addData("IMU Status", "Not Calibrated");
-        }
-        telemetry.update();
 
         // Set drive motors to use encoders
         motor1.setMode(DcMotor.RunMode.STOP_AND_RESET_ENCODER);
@@ -138,11 +107,6 @@ public class FTCFirstProgram extends LinearOpMode {
                 arm.setPower(HOLDING_POWER); // Hold position when idle
             }
 
-            // Read IMU orientation
-            Orientation angles = imu.getAngularOrientation();
-            double yaw = AngleUnit.DEGREES.normalize(angles.firstAngle);
-            double pitch = AngleUnit.DEGREES.normalize(angles.secondAngle);
-            double roll = AngleUnit.DEGREES.normalize(angles.thirdAngle);
 
             // Telemetry
             telemetry.addData("Speed Mode", isSlowMode ? "Slow" : "Fast");
@@ -152,9 +116,6 @@ public class FTCFirstProgram extends LinearOpMode {
             telemetry.addData("Motor 3 (BL)", "PW: %.2f, POS: %.0f°", backLeftPower, toDegrees(motor3.getCurrentPosition()));
             telemetry.addData("Motor 4 (BR)", "PW: %.2f, POS: %.0f°", backRightPower, toDegrees(motor4.getCurrentPosition()));
             telemetry.addData("Arm Motor", "Power: %.2f", arm.getPower());
-            telemetry.addData("IMU Yaw", "%.2f°", yaw);
-            telemetry.addData("IMU Pitch", "%.2f°", pitch);
-            telemetry.addData("IMU Roll", "%.2f°", roll);
             telemetry.update();
         }
     }

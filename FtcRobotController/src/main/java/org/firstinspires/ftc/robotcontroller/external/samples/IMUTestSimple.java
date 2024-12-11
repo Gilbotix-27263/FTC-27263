@@ -13,7 +13,7 @@ public class IMUTestSimple extends LinearOpMode {
         telemetry.addData("Status", "Initializing IMU...");
         telemetry.update();
 
-        imu = hardwareMap.get(BNO055IMU.class, "imu");
+        imu = hardwareMap.get(BNO055IMU.class, "imui");
 
         BNO055IMU.Parameters parameters = new BNO055IMU.Parameters();
         parameters.angleUnit = BNO055IMU.AngleUnit.DEGREES;
