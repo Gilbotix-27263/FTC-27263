@@ -91,7 +91,7 @@ public class AutonomousMovement extends LinearOpMode {
         if (Math.abs(error) > 0.0 && opModeIsActive()) { // Deadband of 0 degree
             double proportionalGain = 0.05; // Lower gain for smoother control
             double power = error * proportionalGain;
-            power = Math.max(-1.0, Math.min(1.0, power)); // Limit power to [-0.3, 0.3]
+            power = Math.max(-0.8, Math.min(0.8, power)); // Limit power to [-0.3, 0.3]
 
             // Apply power to all motors in the same direction
             motor1.setPower(power);
