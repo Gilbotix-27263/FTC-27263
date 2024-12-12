@@ -1,44 +1,64 @@
 package org.firstinspires.ftc.robotcontroller.external.samples;
 
-import com.qualcomm.hardware.bosch.BHI260IMU;
+import com.qualcomm.hardware.rev.RevHubOrientationOnRobot;
 import com.qualcomm.robotcore.eventloop.opmode.LinearOpMode;
 import com.qualcomm.robotcore.eventloop.opmode.TeleOp;
+import com.qualcomm.robotcore.hardware.IMU;
+import org.firstinspires.ftc.robotcore.external.navigation.AngleUnit;
 import org.firstinspires.ftc.robotcore.external.navigation.AngularVelocity;
-import org.firstinspires.ftc.robotcore.external.navigation.Orientation;
+import org.firstinspires.ftc.robotcore.external.navigation.YawPitchRollAngles;
 
 @TeleOp
-public class BHI260APIMUTest extends LinearOpMode {
-    private BHI260IMU imu; // BHI260AP IMU
+public class IMUTestSimple extends LinearOpMode {
+    // IMU sensor instance
+    IMU imu;
 
     @Override
-    public void runOpMode() {
-        telemetry.addData("Status", "Initializing IMU...");
-        telemetry.update();
+    public void runOpMode() throws InterruptedException {
+        // Initialize the IMU using the hardware map
+        imu = hardwareMap.get(IMU.class, "imu");
 
-        // Initialize the IMU
-        imu = hardwareMap.get(BHI260IMU.class, "imu"); // Match the name in your hardware configuration
+        // Define the hub orientation: logo and USB directions
+        RevHubOrientationOnRobot.LogoFacingDirection logoDirection = RevHubOrientationOnRobot.LogoFacingDirection.UP;
+        RevHubOrientationOnRobot.UsbFacingDirection usbDirection = RevHubOrientationOnRobot.UsbFacingDirection.RIGHT;
+
+        // Set hub orientation
+        RevHubOrientationOnRobot orientationOnRobot = new RevHubOrientationOnRobot(logoDirection, usbDirection);
+
+        // Initialize IMU with the defined orientation
+        imu.initialize(new IMU.Parameters(orientationOnRobot));
 
         // Wait for the game to start
-        telemetry.addData("IMU Status", "Initialized");
+        telemetry.addData("Status", "Waiting for start");
         telemetry.update();
-        waitForStart();
 
-        while (opModeIsActive()) {
-            // Retrieve angular velocity (rate of change of orientation)
-            AngularVelocity angularVelocity = imu.getAngularVelocity();
+        // Main loop
+        while (!isStopRequested()) {
+            // Display hub orientation
+            telemetry.addData("Hub Orientation", "Logo=%s, USB=%s", logoDirection, usbDirection);
 
-            // Retrieve orientation angles (yaw, pitch, roll)
-            Orientation orientation = imu.getRobotOrientation(BHI260IMU.AxisReference.INTRINSIC, BHI260IMU.AxisOrder.ZYX);
+            // Reset yaw if the Y button is pressed
+            if (gamepad1.y) {
+                telemetry.addData("Yaw", "Resetting...");
+                imu.resetYaw();
+            } else {
+                telemetry.addData("Yaw", "Press Y to reset");
+            }
 
-            // Telemetry for angular velocity
-            telemetry.addData("Angular Velocity - Yaw (deg/s)", "%.2f", angularVelocity.zRotationRate);
-            telemetry.addData("Angular Velocity - Pitch (deg/s)", "%.2f", angularVelocity.xRotationRate);
-            telemetry.addData("Angular Velocity - Roll (deg/s)", "%.2f", angularVelocity.yRotationRate);
+            // Add an empty line between the reset yaw and XYZ telemetry
+            telemetry.addLine();
 
-            // Telemetry for orientation
-            telemetry.addData("Orientation - Yaw (deg)", "%.2f", orientation.firstAngle);
-            telemetry.addData("Orientation - Pitch (deg)", "%.2f", orientation.secondAngle);
-            telemetry.addData("Orientation - Roll (deg)", "%.2f", orientation.thirdAngle);
+            // Get current yaw, pitch, roll, and angular velocity
+            YawPitchRollAngles orientation = imu.getRobotYawPitchRollAngles();
+            AngularVelocity angularVelocity = imu.getRobotAngularVelocity(AngleUnit.DEGREES);
+
+            // Combine position and velocity for X, Y, Z
+            telemetry.addData("X Axis", "Pitch: %.2f° | Velocity: %.2f°/s",
+                    orientation.getPitch(AngleUnit.DEGREES), angularVelocity.xRotationRate);
+            telemetry.addData("Y Axis", "Roll: %.2f° | Velocity: %.2f°/s",
+                    orientation.getRoll(AngleUnit.DEGREES), angularVelocity.yRotationRate);
+            telemetry.addData("Z Axis", "Yaw: %.2f° | Velocity: %.2f°/s",
+                    orientation.getYaw(AngleUnit.DEGREES), angularVelocity.zRotationRate);
 
             telemetry.update();
         }
