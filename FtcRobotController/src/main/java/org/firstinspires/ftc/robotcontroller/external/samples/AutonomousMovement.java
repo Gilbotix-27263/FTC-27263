@@ -88,10 +88,10 @@ public class AutonomousMovement extends LinearOpMode {
         double error = normalizeAngle(targetZ - currentZ);
 
         // Apply proportional control to correct the yaw
-        if (Math.abs(error) > 0.0 && opModeIsActive()) { // Deadband of 1 degree
-            double proportionalGain = 0.01; // Lower gain for smoother control
+        if (Math.abs(error) > 0.0 && opModeIsActive()) { // Deadband of 0 degree
+            double proportionalGain = 0.05; // Lower gain for smoother control
             double power = error * proportionalGain;
-            power = Math.max(-0.5, Math.min(0.5, power)); // Limit power to [-0.3, 0.3]
+            power = Math.max(-1.0, Math.min(1.0, power)); // Limit power to [-0.3, 0.3]
 
             // Apply power to all motors in the same direction
             motor1.setPower(power);
