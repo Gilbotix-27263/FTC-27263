@@ -105,11 +105,11 @@ public class WebcamTest extends LinearOpMode {
             int yellowCount = Core.countNonZero(yellowMask);
 
             // Detect the color based on thresholds
-            if (redCount > 1000) {
+            if (redCount > 5000) {
                 detectedColor = "Red";
-            } else if (blueCount > 1000) {
+            } else if (blueCount > 5000) {
                 detectedColor = "Blue";
-            } else if (yellowCount > 1000) {
+            } else if (yellowCount > 5000) {
                 detectedColor = "Yellow";
             } else {
                 detectedColor = "None";
