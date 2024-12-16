@@ -69,7 +69,6 @@ public class WebcamTest extends LinearOpMode {
         @Override
         public Mat processFrame(Mat input) {
             // Example: Convert the input frame to grayscale
-            Imgproc.cvtColor(input, input, Imgproc.COLOR_RGB2GRAY);
             return input; // Return the processed frame
         }
     }
