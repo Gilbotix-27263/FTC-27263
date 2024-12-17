@@ -11,23 +11,41 @@ import org.opencv.core.Mat;
 import org.opencv.core.Scalar;
 import org.opencv.imgproc.Imgproc;
 
-@Autonomous(name = "Webcam Color Detection", group = "Samples")
+import org.firstinspires.ftc.robotcore.external.hardware.camera.CameraName;
+import org.firstinspires.ftc.vision.apriltag.AprilTagLibrary;
+import org.firstinspires.ftc.vision.apriltag.AprilTagProcessor;
+import org.firstinspires.ftc.vision.VisionPortal;
+
+@Autonomous(name = "Webcam with AprilTag & Color Detection", group = "Samples")
 public class WebcamTest extends LinearOpMode {
     OpenCvCamera webcam;
+    AprilTagProcessor myAprilTagProcessor;
+    VisionPortal visionPortal;
 
     @Override
     public void runOpMode() {
-        // Get the camera monitor view ID for the webcam
+        // Setup webcam for color detection
         int cameraMonitorViewId = hardwareMap.appContext.getResources().getIdentifier(
                 "cameraMonitorViewId", "id", hardwareMap.appContext.getPackageName());
         webcam = OpenCvCameraFactory.getInstance().createWebcam(
                 hardwareMap.get(WebcamName.class, "Webcam 1"), cameraMonitorViewId);
 
-        // Set pipeline for processing
+        // Initialize AprilTag Processor
+        myAprilTagProcessor = new AprilTagProcessor.Builder()
+                .setDrawTagID(true)
+                .setDrawTagOutline(true)
+                .setDrawAxes(true)
+                .setDrawCubeProjection(true)
+                .build();
+
+        // Setup VisionPortal for AprilTag detection
+        visionPortal = VisionPortal.easyCreateWithDefaults(
+                hardwareMap.get(CameraName.class, "Webcam 1"), myAprilTagProcessor);
+
+        // Set pipeline for color detection
         ColorDetectionPipeline pipeline = new ColorDetectionPipeline();
         webcam.setPipeline(pipeline);
 
-        // Open the webcam asynchronously
         webcam.openCameraDeviceAsync(new OpenCvCamera.AsyncCameraOpenListener() {
             @Override
             public void onOpened() {
@@ -47,14 +65,25 @@ public class WebcamTest extends LinearOpMode {
         telemetry.update();
         waitForStart();
 
-        // Main loop to display detected colors
+        // Main loop for AprilTag and color detection
         while (opModeIsActive()) {
+            // AprilTag detection
+            int tagCount = myAprilTagProcessor.getDetections().size();
+            telemetry.addData("AprilTags Detected", tagCount);
+
+            if (tagCount > 0) {
+                telemetry.addData("First Tag ID", myAprilTagProcessor.getDetections().get(0).id);
+            }
+
+            // Color detection
             telemetry.addData("Detected Color", pipeline.getDetectedColor());
+
             telemetry.update();
         }
 
-        // Stop the camera streaming
+        // Stop camera streaming
         webcam.stopStreaming();
+        visionPortal.close();
     }
 
     /**
