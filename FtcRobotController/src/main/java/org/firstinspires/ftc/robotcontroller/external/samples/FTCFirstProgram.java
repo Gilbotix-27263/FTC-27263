@@ -1,14 +1,11 @@
 package org.firstinspires.ftc.robotcontroller.external.samples;
 
-import static org.firstinspires.ftc.robotcore.external.BlocksOpModeCompanion.gamepad1;
-import static org.firstinspires.ftc.robotcore.external.BlocksOpModeCompanion.hardwareMap;
-import static org.firstinspires.ftc.robotcore.external.BlocksOpModeCompanion.telemetry;
-
 import com.qualcomm.robotcore.eventloop.opmode.LinearOpMode;
 import com.qualcomm.robotcore.eventloop.opmode.TeleOp;
 import com.qualcomm.robotcore.hardware.DcMotor;
 import com.qualcomm.robotcore.util.ElapsedTime;
-import com.qualcomm.robotcore.util.Range;
+import org.firstinspires.ftc.robotcore.external.navigation.AngleUnit;
+import org.firstinspires.ftc.robotcore.external.navigation.Orientation;
 
 @TeleOp
 public class FTCFirstProgram extends LinearOpMode {
@@ -17,12 +14,14 @@ public class FTCFirstProgram extends LinearOpMode {
     private DcMotor motor2 = null; // Front Right
     private DcMotor motor3 = null; // Back Left
     private DcMotor motor4 = null; // Back Right
-
-    private double speedMultiplier = 1.0; // Default to full speed
+    private DcMotor arm; // Arm motor without encoder
+    private double speedMultiplier = 1.0; // Default to Null speed
     private boolean isSlowMode = false;
     private ElapsedTime toggleTimer = new ElapsedTime(); // Timer for LB toggle cooldown
 
-    private static final int TICKS_PER_REV = 1440; // Replace with your motor's ticks per revolution
+    private static final double TICKS_PER_REV = 537.7; // Encoder ticks per revolution (adjust for your motor)
+    private static final double MAX_POWER = 0.8; // Maximum arm power for movement
+    private static final double HOLDING_POWER = 0.5; // Power to hold arm position
 
     @Override
     public void runOpMode() throws InterruptedException {
@@ -31,8 +30,10 @@ public class FTCFirstProgram extends LinearOpMode {
         motor2 = hardwareMap.get(DcMotor.class, "motor2");
         motor3 = hardwareMap.get(DcMotor.class, "motor3");
         motor4 = hardwareMap.get(DcMotor.class, "motor4");
+        arm = hardwareMap.get(DcMotor.class, "arm");
 
-        // Set motor mode to use encoders
+
+        // Set drive motors to use encoders
         motor1.setMode(DcMotor.RunMode.STOP_AND_RESET_ENCODER);
         motor2.setMode(DcMotor.RunMode.STOP_AND_RESET_ENCODER);
         motor3.setMode(DcMotor.RunMode.STOP_AND_RESET_ENCODER);
@@ -42,6 +43,9 @@ public class FTCFirstProgram extends LinearOpMode {
         motor2.setMode(DcMotor.RunMode.RUN_USING_ENCODER);
         motor3.setMode(DcMotor.RunMode.RUN_USING_ENCODER);
         motor4.setMode(DcMotor.RunMode.RUN_USING_ENCODER);
+
+        // Set arm motor to RUN_WITHOUT_ENCODER
+        arm.setMode(DcMotor.RunMode.RUN_WITHOUT_ENCODER);
 
         // Set motor directions to default
         motor1.setDirection(DcMotor.Direction.FORWARD);
@@ -93,6 +97,16 @@ public class FTCFirstProgram extends LinearOpMode {
             motor3.setPower(backLeftPower);
             motor4.setPower(backRightPower);
 
+            // Control the arm motor
+            if (gamepad1.right_trigger > 0.1) {
+                arm.setPower(MAX_POWER); // Move arm up
+            } else if (gamepad1.left_trigger > 0.1) {
+                arm.setPower(-MAX_POWER); // Move arm down
+            } else {
+                arm.setPower(HOLDING_POWER); // Hold position when idle
+            }
+
+
             // Telemetry
             telemetry.addData("Speed Mode", isSlowMode ? "Slow" : "Fast");
             telemetry.addData("Speed Multiplier", "%.2f", speedMultiplier);
@@ -100,6 +114,7 @@ public class FTCFirstProgram extends LinearOpMode {
             telemetry.addData("Motor 2 (FR)", "PW: %.2f, POS: %.0f°", frontRightPower, toDegrees(motor2.getCurrentPosition()));
             telemetry.addData("Motor 3 (BL)", "PW: %.2f, POS: %.0f°", backLeftPower, toDegrees(motor3.getCurrentPosition()));
             telemetry.addData("Motor 4 (BR)", "PW: %.2f, POS: %.0f°", backRightPower, toDegrees(motor4.getCurrentPosition()));
+            telemetry.addData("Arm Motor", "Power: %.2f", arm.getPower());
             telemetry.update();
         }
     }
