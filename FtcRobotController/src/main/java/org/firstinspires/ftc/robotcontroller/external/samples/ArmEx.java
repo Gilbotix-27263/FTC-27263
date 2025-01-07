@@ -4,7 +4,7 @@ import com.qualcomm.robotcore.eventloop.opmode.LinearOpMode;
 import com.qualcomm.robotcore.eventloop.opmode.TeleOp;
 import com.qualcomm.robotcore.hardware.DcMotor;
 
-@TeleOp
+@TeleOp(group = "Main")
 public class ArmEx extends LinearOpMode {
     private DcMotor arm; // DC motor for the arm
     private static final double MAX_POWER = 0.8; // Maximum motor power for movement

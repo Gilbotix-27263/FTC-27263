@@ -9,7 +9,7 @@ import com.qualcomm.robotcore.util.Range;
 import org.firstinspires.ftc.robotcore.external.navigation.AngleUnit;
 import org.firstinspires.ftc.robotcore.external.navigation.YawPitchRollAngles;
 
-@Autonomous(name = "AutonomousMovement")
+@Autonomous(group = "Main")
 public class AutonomousMovement extends LinearOpMode {
     private DcMotor motor1; // Front Left
     private DcMotor motor2; // Front Right

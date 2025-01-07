@@ -8,7 +8,7 @@ import com.qualcomm.robotcore.hardware.IMU;
 import org.firstinspires.ftc.robotcore.external.navigation.AngleUnit;
 import org.firstinspires.ftc.robotcore.external.navigation.YawPitchRollAngles;
 
-@TeleOp
+@TeleOp(group = "Main")
 public class HoldPos extends LinearOpMode {
     // Motors
     private DcMotor motor1; // Front Left

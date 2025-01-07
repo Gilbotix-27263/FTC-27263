@@ -7,7 +7,7 @@ import com.qualcomm.robotcore.util.ElapsedTime;
 import org.firstinspires.ftc.robotcore.external.navigation.AngleUnit;
 import org.firstinspires.ftc.robotcore.external.navigation.Orientation;
 
-@TeleOp
+@TeleOp(group = "Main")
 public class FTCFirstProgram extends LinearOpMode {
     private ElapsedTime runtime = new ElapsedTime();
     private DcMotor motor1 = null; // Front Left
