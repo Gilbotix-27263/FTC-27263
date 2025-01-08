@@ -55,9 +55,9 @@ public class FullRobotControl extends LinearOpMode {
 
         toggleTimer.reset();
 
-        // Set the servoMovingIntake to its 0 position
-        double zeroPosition = 0.0; // Define the zero position value
-        servoMovingIntake.setPosition(zeroPosition);
+        // Set the servoMovingIntake to its initial 0 position
+        double movingIntakePosition = 0.0; // Define the initial position
+        servoMovingIntake.setPosition(movingIntakePosition);
 
         // Telemetry setup
         telemetry.addData("Status", "Initialized");
@@ -124,7 +124,13 @@ public class FullRobotControl extends LinearOpMode {
             }
 
             // Servo control for moving intake
-            double movingIntakePosition = gamepad2.left_bumper ? 0.0 : (gamepad2.right_bumper ? 1.0 : 0.5);
+            if (gamepad2.left_bumper) {
+                movingIntakePosition = 0.0;
+            } else if (gamepad2.right_bumper) {
+                movingIntakePosition = 1.0;
+            }
+
+            // Always set the servo to its last known position
             servoMovingIntake.setPosition(Range.clip(movingIntakePosition, 0.0, 1.0));
 
             // Telemetry
@@ -134,7 +140,7 @@ public class FullRobotControl extends LinearOpMode {
             telemetry.addData("ArmUD Motor", "Power: %.2f, Position: %d", armUD.getPower(), armUD.getCurrentPosition());
             telemetry.addData("ArmEx Motor", "Power: %.2f, Position: %d", armEx.getPower(), armEx.getCurrentPosition());
             telemetry.addData("Intake CRServo", "Power: %.2f", servoIntake.getPower());
-            telemetry.addData("Moving Intake Servo", "Position: %.2f", servoMovingIntake.getPosition());
+            telemetry.addData("Moving Intake Servo", "Position: %.2f", movingIntakePosition);
             telemetry.update();
         }
     }
