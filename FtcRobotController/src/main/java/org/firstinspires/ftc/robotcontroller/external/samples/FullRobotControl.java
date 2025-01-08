@@ -80,9 +80,9 @@ public class FullRobotControl extends LinearOpMode {
             double strafe = gamepad1.left_stick_x * speedMultiplier;
 
             double frontLeftPower = drive + turn + strafe;
-            double frontRightPower = drive - turn - strafe;
-            double backLeftPower = drive + turn - strafe;
-            double backRightPower = drive - turn + strafe;
+            double frontRightPower = -drive - turn + strafe;
+            double backLeftPower = -drive + turn - strafe;
+            double backRightPower = drive - turn - strafe;
 
             motor1.setPower(frontLeftPower);
             motor2.setPower(frontRightPower);
