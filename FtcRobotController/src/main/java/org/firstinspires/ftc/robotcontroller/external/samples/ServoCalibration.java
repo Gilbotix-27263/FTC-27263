@@ -4,19 +4,23 @@ import com.qualcomm.robotcore.eventloop.opmode.LinearOpMode;
 import com.qualcomm.robotcore.eventloop.opmode.TeleOp;
 import com.qualcomm.robotcore.hardware.Servo;
 
-@TeleOp(name = "Servo Calibration", group = "Calibration")
+@TeleOp(name = "Servo Calibration with Smooth Transition", group = "Calibration")
 public class ServoCalibration extends LinearOpMode {
     private Servo servoMovingIntake;
 
-    // Default positions for calibration (can be adjusted in real-time)
+    // Default positions for calibration
     private double calib0Degrees = 0.0;
     private double calib90Degrees = 1.0;
-    private double currentPosition = 0.0; // Tracks the current servo position
+    private double currentPosition = 0.0; // Tracks the servo's current position
 
     @Override
     public void runOpMode() throws InterruptedException {
         // Initialize the servo
         servoMovingIntake = hardwareMap.get(Servo.class, "movingIntake");
+
+        // Set initial servo position
+        currentPosition = calib0Degrees;
+        servoMovingIntake.setPosition(currentPosition);
 
         telemetry.addData("Status", "Initialized");
         telemetry.update();
@@ -24,15 +28,14 @@ public class ServoCalibration extends LinearOpMode {
         waitForStart();
 
         while (opModeIsActive()) {
-            // Adjust the position for 0 degrees using gamepad D-pad
+            // Adjust the position for 0 degrees using D-pad Up/Down
             if (gamepad1.dpad_up) {
-                calib0Degrees += 0.01
-            ; // Increment position
+                calib0Degrees += 0.01; // Increment position
             } else if (gamepad1.dpad_down) {
                 calib0Degrees -= 0.01; // Decrement position
             }
 
-            // Adjust the position for 90 degrees using gamepad D-pad left/right
+            // Adjust the position for 90 degrees using D-pad Left/Right
             if (gamepad1.dpad_left) {
                 calib90Degrees -= 0.01; // Decrement position
             } else if (gamepad1.dpad_right) {
@@ -46,13 +49,13 @@ public class ServoCalibration extends LinearOpMode {
             // Move servo to 0 degrees when "A" is pressed
             if (gamepad1.a) {
                 smoothMove(calib0Degrees);
-                telemetry.addData("Servo Command", "Moving to 0 Degrees (%.2f)", calib0Degrees);
+                telemetry.addData("Moving to 0 Degrees", "Target: %.2f", calib0Degrees);
             }
 
             // Move servo to 90 degrees when "B" is pressed
             if (gamepad1.b) {
                 smoothMove(calib90Degrees);
-                telemetry.addData("Servo Command", "Moving to 90 Degrees (%.2f)", calib90Degrees);
+                telemetry.addData("Moving to 90 Degrees", "Target: %.2f", calib90Degrees);
             }
 
             // Telemetry for feedback
@@ -70,20 +73,25 @@ public class ServoCalibration extends LinearOpMode {
      */
     private void smoothMove(double targetPosition) {
         double step = 0.01; // Step size for smooth transitions
-        while (Math.abs(currentPosition - targetPosition) > step) {
-            if (currentPosition < targetPosition) {
+        if (currentPosition < targetPosition) {
+            while (currentPosition < targetPosition) {
                 currentPosition += step;
-            } else if (currentPosition > targetPosition) {
-                currentPosition -= step;
+                currentPosition = Math.min(currentPosition, targetPosition); // Ensure it doesn't overshoot
+                servoMovingIntake.setPosition(currentPosition);
+                telemetry.addData("Servo Position (Increasing)", "%.2f", currentPosition);
+                telemetry.update();
+                sleep(20); // Small delay for smooth motion
             }
-
-            currentPosition = Math.max(0.0, Math.min(1.0, currentPosition)); // Ensure valid range
-            servoMovingIntake.setPosition(currentPosition);
-            sleep(20); // Add a small delay for smooth motion
+        } else if (currentPosition > targetPosition) {
+            while (currentPosition > targetPosition) {
+                currentPosition -= step;
+                currentPosition = Math.max(currentPosition, targetPosition); // Ensure it doesn't undershoot
+                servoMovingIntake.setPosition(currentPosition);
+                telemetry.addData("Servo Position (Decreasing)", "%.2f", currentPosition);
+                telemetry.update();
+                sleep(20); // Small delay for smooth motion
+            }
         }
-
-        // Set the position exactly at the target to ensure accuracy
-        currentPosition = targetPosition;
-        servoMovingIntake.setPosition(currentPosition);
+        currentPosition = targetPosition; // Set to the final position
     }
 }
