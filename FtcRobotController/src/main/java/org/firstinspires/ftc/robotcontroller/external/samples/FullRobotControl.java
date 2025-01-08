@@ -26,6 +26,10 @@ public class FullRobotControl extends LinearOpMode {
     // Constants
     private static final double MAX_ARM_POWER = 0.8;
 
+    // Servo positions for moving intake
+    private static final double SERVO_0_DEGREES = 0.0;
+    private static final double SERVO_90_DEGREES = 1.0;
+
     @Override
     public void runOpMode() throws InterruptedException {
         // Initialize hardware
@@ -54,6 +58,9 @@ public class FullRobotControl extends LinearOpMode {
         int armExTargetPosition = armEx.getCurrentPosition();
 
         toggleTimer.reset();
+
+        // Initialize servo to 0 degrees
+        servoMovingIntake.setPosition(SERVO_0_DEGREES);
 
         // Telemetry setup
         telemetry.addData("Status", "Initialized");
@@ -121,9 +128,9 @@ public class FullRobotControl extends LinearOpMode {
 
             // Servo control for moving intake
             if (gamepad2.left_bumper) {
-                    servoMovingIntake.setPosition(0.3);
+                servoMovingIntake.setPosition(SERVO_0_DEGREES); // Move to 0 degrees
             } else if (gamepad2.right_bumper) {
-                servoMovingIntake.setPosition(1);
+                servoMovingIntake.setPosition(SERVO_90_DEGREES); // Move to 90 degrees
             }
 
             // Telemetry
@@ -133,6 +140,7 @@ public class FullRobotControl extends LinearOpMode {
             telemetry.addData("ArmUD Motor", "Power: %.2f, Position: %d", armUD.getPower(), armUD.getCurrentPosition());
             telemetry.addData("ArmEx Motor", "Power: %.2f, Position: %d", armEx.getPower(), armEx.getCurrentPosition());
             telemetry.addData("Intake CRServo", "Power: %.2f", servoIntake.getPower());
+            telemetry.addData("Moving Intake Servo", "Position: %.2f", servoMovingIntake.getPosition());
             telemetry.update();
         }
     }
