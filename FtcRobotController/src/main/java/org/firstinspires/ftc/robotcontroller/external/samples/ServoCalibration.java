@@ -11,6 +11,7 @@ public class ServoCalibration extends LinearOpMode {
     // Default positions for calibration (can be adjusted in real-time)
     private double calib0Degrees = 0.0;
     private double calib90Degrees = 1.0;
+    private double currentPosition = 0.0; // Tracks the current servo position
 
     @Override
     public void runOpMode() throws InterruptedException {
@@ -43,20 +44,45 @@ public class ServoCalibration extends LinearOpMode {
 
             // Move servo to 0 degrees when "A" is pressed
             if (gamepad1.a) {
-                servoMovingIntake.setPosition(calib0Degrees);
-                telemetry.addData("Servo Command", "0 Degrees (%.2f)", calib0Degrees);
+                smoothMove(calib0Degrees);
+                telemetry.addData("Servo Command", "Moving to 0 Degrees (%.2f)", calib0Degrees);
             }
 
             // Move servo to 90 degrees when "B" is pressed
             if (gamepad1.b) {
-                servoMovingIntake.setPosition(calib90Degrees);
-                telemetry.addData("Servo Command", "90 Degrees (%.2f)", calib90Degrees);
+                smoothMove(calib90Degrees);
+                telemetry.addData("Servo Command", "Moving to 90 Degrees (%.2f)", calib90Degrees);
             }
 
             // Telemetry for feedback
             telemetry.addData("Calibration - 0 Degrees", "%.2f", calib0Degrees);
             telemetry.addData("Calibration - 90 Degrees", "%.2f", calib90Degrees);
+            telemetry.addData("Current Servo Position", "%.2f", currentPosition);
             telemetry.update();
         }
+    }
+
+    /**
+     * Smoothly moves the servo to the target position in small increments.
+     *
+     * @param targetPosition The desired servo position to move to.
+     */
+    private void smoothMove(double targetPosition) {
+        double step = 0.01; // Step size for smooth transitions
+        while (Math.abs(currentPosition - targetPosition) > step) {
+            if (currentPosition < targetPosition) {
+                currentPosition += step;
+            } else if (currentPosition > targetPosition) {
+                currentPosition -= step;
+            }
+
+            currentPosition = Math.max(0.0, Math.min(1.0, currentPosition)); // Ensure valid range
+            servoMovingIntake.setPosition(currentPosition);
+            sleep(20); // Add a small delay for smooth motion
+        }
+
+        // Set the position exactly at the target to ensure accuracy
+        currentPosition = targetPosition;
+        servoMovingIntake.setPosition(currentPosition);
     }
 }
