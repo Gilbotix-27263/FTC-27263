@@ -8,9 +8,9 @@ import com.qualcomm.robotcore.hardware.Servo;
 public class ServoCalibration extends LinearOpMode {
     private Servo servoMovingIntake;
 
-    // Default positions for calibration (adjust as needed)
-    private static final double DEFAULT_0_DEGREES = 0.0;
-    private static final double DEFAULT_90_DEGREES = 1.0;
+    // Default positions for calibration (can be adjusted in real-time)
+    private double calib0Degrees = 0.0;
+    private double calib90Degrees = 1.0;
 
     @Override
     public void runOpMode() throws InterruptedException {
@@ -23,19 +23,39 @@ public class ServoCalibration extends LinearOpMode {
         waitForStart();
 
         while (opModeIsActive()) {
-            // Move servo to 0 degrees
-            if (gamepad1.a) {
-                servoMovingIntake.setPosition(DEFAULT_0_DEGREES);
-                telemetry.addData("Servo Position", "0 Degrees (%.2f)", DEFAULT_0_DEGREES);
+            // Adjust the position for 0 degrees using gamepad D-pad
+            if (gamepad1.dpad_up) {
+                calib0Degrees += 0.01; // Increment position
+            } else if (gamepad1.dpad_down) {
+                calib0Degrees -= 0.01; // Decrement position
             }
 
-            // Move servo to 90 degrees
+            // Adjust the position for 90 degrees using gamepad D-pad left/right
+            if (gamepad1.dpad_left) {
+                calib90Degrees -= 0.01; // Decrement position
+            } else if (gamepad1.dpad_right) {
+                calib90Degrees += 0.01; // Increment position
+            }
+
+            // Clip the values to ensure they're within the valid servo range
+            calib0Degrees = Math.max(0.0, Math.min(1.0, calib0Degrees));
+            calib90Degrees = Math.max(0.0, Math.min(1.0, calib90Degrees));
+
+            // Move servo to 0 degrees when "A" is pressed
+            if (gamepad1.a) {
+                servoMovingIntake.setPosition(calib0Degrees);
+                telemetry.addData("Servo Command", "0 Degrees (%.2f)", calib0Degrees);
+            }
+
+            // Move servo to 90 degrees when "B" is pressed
             if (gamepad1.b) {
-                servoMovingIntake.setPosition(DEFAULT_90_DEGREES);
-                telemetry.addData("Servo Position", "90 Degrees (%.2f)", DEFAULT_90_DEGREES);
+                servoMovingIntake.setPosition(calib90Degrees);
+                telemetry.addData("Servo Command", "90 Degrees (%.2f)", calib90Degrees);
             }
 
             // Telemetry for feedback
+            telemetry.addData("Calibration - 0 Degrees", "%.2f", calib0Degrees);
+            telemetry.addData("Calibration - 90 Degrees", "%.2f", calib90Degrees);
             telemetry.update();
         }
     }
