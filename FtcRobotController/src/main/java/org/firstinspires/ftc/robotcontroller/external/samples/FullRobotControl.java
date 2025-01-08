@@ -23,6 +23,8 @@ public class FullRobotControl extends LinearOpMode {
     private boolean isSlowMode = false;
     private ElapsedTime toggleTimer = new ElapsedTime();
 
+    private double movingIntakePosition = 0.5;
+
     // Constants
     private static final double MAX_ARM_POWER = 0.8;
 
@@ -76,8 +78,8 @@ public class FullRobotControl extends LinearOpMode {
 
             // --- Controller 1: Driving ---
             double drive = gamepad1.left_stick_y * speedMultiplier;
-            double turn = gamepad1.right_stick_x * speedMultiplier;
-            double strafe = gamepad1.left_stick_x * speedMultiplier;
+            double turn = -gamepad1.right_stick_x * speedMultiplier;
+            double strafe = -gamepad1.left_stick_x * speedMultiplier;
 
             double frontLeftPower = drive + turn + strafe;
             double frontRightPower = -drive - turn + strafe;
@@ -124,8 +126,18 @@ public class FullRobotControl extends LinearOpMode {
             }
 
             // Servo control for moving intake
-            double movingIntakePosition = gamepad2.left_bumper ? 0.0 : (gamepad2.right_bumper ? 1.0 : 0.5);
-            servoMovingIntake.setPosition(Range.clip(movingIntakePosition, 0.0, 1.0));
+            if (gamepad2.left_bumper) {
+                movingIntakePosition = 1; // Left bumper: move to position 1
+            } else if (gamepad2.right_bumper) {
+                movingIntakePosition = 0; // Right bumper: move to position 0
+            }else
+            {
+                movingIntakePosition = 0.5;
+            }
+
+            movingIntakePosition = Math.max(0, Math.min(1, movingIntakePosition));
+
+            servoMovingIntake.setPosition(movingIntakePosition);
 
             // Telemetry
             telemetry.addData("Speed Mode", isSlowMode ? "Slow" : "Fast");
@@ -135,6 +147,7 @@ public class FullRobotControl extends LinearOpMode {
             telemetry.addData("ArmEx Motor", "Power: %.2f, Position: %d", armEx.getPower(), armEx.getCurrentPosition());
             telemetry.addData("Intake CRServo", "Power: %.2f", servoIntake.getPower());
             telemetry.addData("Moving Intake Servo", "Position: %.2f", servoMovingIntake.getPosition());
+            telemetry.addData("Moving Intake Servo", "Position: %.2f", movingIntakePosition);
             telemetry.update();
         }
     }
