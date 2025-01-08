@@ -26,7 +26,8 @@ public class ServoCalibration extends LinearOpMode {
         while (opModeIsActive()) {
             // Adjust the position for 0 degrees using gamepad D-pad
             if (gamepad1.dpad_up) {
-                calib0Degrees += 0.01; // Increment position
+                calib0Degrees += 0.01
+            ; // Increment position
             } else if (gamepad1.dpad_down) {
                 calib0Degrees -= 0.01; // Decrement position
             }
