@@ -59,9 +59,6 @@ public class FullRobotControl extends LinearOpMode {
 
         toggleTimer.reset();
 
-        // Initialize servo to 0 degrees
-        servoMovingIntake.setPosition(SERVO_0_DEGREES);
-
         // Telemetry setup
         telemetry.addData("Status", "Initialized");
         telemetry.update();
@@ -128,9 +125,9 @@ public class FullRobotControl extends LinearOpMode {
 
             // Servo control for moving intake
             if (gamepad2.left_bumper) {
-                servoMovingIntake.setPosition(SERVO_0_DEGREES); // Move to 0 degrees
+                servoMovingIntake.setPosition(1); // Move to 0 degrees
             } else if (gamepad2.right_bumper) {
-                servoMovingIntake.setPosition(SERVO_90_DEGREES); // Move to 90 degrees
+                servoMovingIntake.setPosition(0.8333); // Move to 90 degrees
             }
 
             // Telemetry
