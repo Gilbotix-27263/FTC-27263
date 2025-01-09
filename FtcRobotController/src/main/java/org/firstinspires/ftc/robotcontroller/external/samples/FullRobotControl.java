@@ -16,17 +16,19 @@ public class FullRobotControl extends LinearOpMode {
     // Arm and intake motors/servos
     private DcMotor armUD, armEx;
     private CRServo servoIntake; // CRServo for continuous rotation
-    private Servo servoMovingIntake;
+    private Servo servoMovingIntake; // Normal servo
 
     // Speed control
     private double speedMultiplier = 1.0;
     private boolean isSlowMode = false;
     private ElapsedTime toggleTimer = new ElapsedTime();
 
-    private double movingIntakePosition = 0.5;
-
     // Constants
     private static final double MAX_ARM_POWER = 0.8;
+
+    // Servo positions for moving intake
+    private static final double SERVO_0_DEGREES = 0.0; // Position for 0 degrees
+    private static final double SERVO_90_DEGREES = 0.5; // Position for 90 degrees (adjust based on calibration)
 
     @Override
     public void runOpMode() throws InterruptedException {
@@ -37,7 +39,7 @@ public class FullRobotControl extends LinearOpMode {
         motor4 = hardwareMap.get(DcMotor.class, "motor4");
         armUD = hardwareMap.get(DcMotor.class, "armUD");
         armEx = hardwareMap.get(DcMotor.class, "arm");
-        servoIntake = hardwareMap.get(CRServo.class, "intake"); // CRServo initialization
+        servoIntake = hardwareMap.get(CRServo.class, "intake");
         servoMovingIntake = hardwareMap.get(Servo.class, "movingIntake");
 
         // Configure motors
@@ -57,9 +59,8 @@ public class FullRobotControl extends LinearOpMode {
 
         toggleTimer.reset();
 
-        // Set the servoMovingIntake to its 0 position
-        double zeroPosition = 0.0; // Define the zero position value
-        servoMovingIntake.setPosition(zeroPosition);
+        // Initialize servo to 0 degrees
+        servoMovingIntake.setPosition(SERVO_0_DEGREES);
 
         // Telemetry setup
         telemetry.addData("Status", "Initialized");
@@ -78,8 +79,8 @@ public class FullRobotControl extends LinearOpMode {
 
             // --- Controller 1: Driving ---
             double drive = gamepad1.left_stick_y * speedMultiplier;
-            double turn = -gamepad1.right_stick_x * speedMultiplier;
-            double strafe = -gamepad1.left_stick_x * speedMultiplier;
+            double turn = gamepad1.right_stick_x * speedMultiplier;
+            double strafe = gamepad1.left_stick_x * speedMultiplier;
 
             double frontLeftPower = drive + turn + strafe;
             double frontRightPower = -drive - turn + strafe;
@@ -127,17 +128,10 @@ public class FullRobotControl extends LinearOpMode {
 
             // Servo control for moving intake
             if (gamepad2.left_bumper) {
-                movingIntakePosition = 1; // Left bumper: move to position 1
+                servoMovingIntake.setPosition(SERVO_0_DEGREES); // Move to 0 degrees
             } else if (gamepad2.right_bumper) {
-                movingIntakePosition = 0; // Right bumper: move to position 0
-            }else
-            {
-                movingIntakePosition = 0.5;
+                servoMovingIntake.setPosition(SERVO_90_DEGREES); // Move to 90 degrees
             }
-
-            movingIntakePosition = Math.max(0, Math.min(1, movingIntakePosition));
-
-            servoMovingIntake.setPosition(movingIntakePosition);
 
             // Telemetry
             telemetry.addData("Speed Mode", isSlowMode ? "Slow" : "Fast");
@@ -147,7 +141,6 @@ public class FullRobotControl extends LinearOpMode {
             telemetry.addData("ArmEx Motor", "Power: %.2f, Position: %d", armEx.getPower(), armEx.getCurrentPosition());
             telemetry.addData("Intake CRServo", "Power: %.2f", servoIntake.getPower());
             telemetry.addData("Moving Intake Servo", "Position: %.2f", servoMovingIntake.getPosition());
-            telemetry.addData("Moving Intake Servo", "Position: %.2f", movingIntakePosition);
             telemetry.update();
         }
     }
