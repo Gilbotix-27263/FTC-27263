@@ -16,7 +16,7 @@ public class FullRobotControl extends LinearOpMode {
     // Arm and intake motors/servos
     private DcMotor armUD, armEx;
     private CRServo servoIntake; // CRServo for continuous rotation
-    private Servo servoMovingIntake; // Normal servo
+    private Servo servoMovingIntake;
 
     // Speed control
     private double speedMultiplier = 1.0;
@@ -25,10 +25,6 @@ public class FullRobotControl extends LinearOpMode {
 
     // Constants
     private static final double MAX_ARM_POWER = 0.8;
-
-    // Servo control for degrees
-    private static final double MIN_SERVO_DEGREES = 0.0; // Minimum degree value
-    private static final double MAX_SERVO_DEGREES = 180.0; // Maximum degree value
 
     @Override
     public void runOpMode() throws InterruptedException {
@@ -39,7 +35,7 @@ public class FullRobotControl extends LinearOpMode {
         motor4 = hardwareMap.get(DcMotor.class, "motor4");
         armUD = hardwareMap.get(DcMotor.class, "armUD");
         armEx = hardwareMap.get(DcMotor.class, "arm");
-        servoIntake = hardwareMap.get(CRServo.class, "intake");
+        servoIntake = hardwareMap.get(CRServo.class, "intake"); // CRServo initialization
         servoMovingIntake = hardwareMap.get(Servo.class, "movingIntake");
 
         // Configure motors
@@ -59,8 +55,9 @@ public class FullRobotControl extends LinearOpMode {
 
         toggleTimer.reset();
 
-        // Initialize servo to 0 degrees
-        setServoPosition(servoMovingIntake, 0.0);
+        // Set the servoMovingIntake to its 0 position
+        double zeroPosition = 0.0; // Define the zero position value
+        servoMovingIntake.setPosition(zeroPosition);
 
         // Telemetry setup
         telemetry.addData("Status", "Initialized");
@@ -126,12 +123,9 @@ public class FullRobotControl extends LinearOpMode {
                 servoIntake.setPower(0.0); // Stop rotation
             }
 
-            // Servo control for moving intake using degrees
-            if (gamepad2.left_bumper) {
-                setServoPosition(servoMovingIntake, 0.0); // Move to 0 degrees
-            } else if (gamepad2.right_bumper) {
-                setServoPosition(servoMovingIntake, 90.0); // Move to 90 degrees
-            }
+            // Servo control for moving intake
+            double movingIntakePosition = gamepad2.left_bumper ? 0.0 : (gamepad2.right_bumper ? 1.0 : 0.5);
+            servoMovingIntake.setPosition(Range.clip(movingIntakePosition, 0.0, 1.0));
 
             // Telemetry
             telemetry.addData("Speed Mode", isSlowMode ? "Slow" : "Fast");
@@ -140,29 +134,8 @@ public class FullRobotControl extends LinearOpMode {
             telemetry.addData("ArmUD Motor", "Power: %.2f, Position: %d", armUD.getPower(), armUD.getCurrentPosition());
             telemetry.addData("ArmEx Motor", "Power: %.2f, Position: %d", armEx.getPower(), armEx.getCurrentPosition());
             telemetry.addData("Intake CRServo", "Power: %.2f", servoIntake.getPower());
-            telemetry.addData("Moving Intake Servo", "Position (Degrees): %.2f", getServoDegrees(servoMovingIntake));
+            telemetry.addData("Moving Intake Servo", "Position: %.2f", servoMovingIntake.getPosition());
             telemetry.update();
         }
-    }
-
-    /**
-     * Sets the servo position in degrees.
-     *
-     * @param servo  The servo to control.
-     * @param degrees The desired position in degrees (0 to 180).
-     */
-    private void setServoPosition(Servo servo, double degrees) {
-        double position = Range.clip((degrees - MIN_SERVO_DEGREES) / (MAX_SERVO_DEGREES - MIN_SERVO_DEGREES), 0.0, 1.0);
-        servo.setPosition(position);
-    }
-
-    /**
-     * Gets the servo position in degrees.
-     *
-     * @param servo The servo to read from.
-     * @return The position in degrees.
-     */
-    private double getServoDegrees(Servo servo) {
-        return servo.getPosition() * (MAX_SERVO_DEGREES - MIN_SERVO_DEGREES) + MIN_SERVO_DEGREES;
     }
 }
