@@ -15,7 +15,7 @@ public class FullRobotControl extends LinearOpMode {
 
     // Arm and intake motors/servos
     private DcMotor armUD, armEx;
-    private CRServo servoIntake; // CRServo for continuous rotation
+    private CRServo servoIntakeLeft, servoIntakeRight; // Two CRServos for the intake mechanism
     private Servo servoMovingIntake;
 
     // Speed control
@@ -24,7 +24,7 @@ public class FullRobotControl extends LinearOpMode {
     private ElapsedTime toggleTimer = new ElapsedTime();
 
     // Constants
-    private static final double MAX_ARM_POWER = 0.8;
+    private static final double MAX_ARM_POWER = 0.4;
 
     @Override
     public void runOpMode() throws InterruptedException {
@@ -35,7 +35,8 @@ public class FullRobotControl extends LinearOpMode {
         motor4 = hardwareMap.get(DcMotor.class, "motor4");
         armUD = hardwareMap.get(DcMotor.class, "armUD");
         armEx = hardwareMap.get(DcMotor.class, "arm");
-        servoIntake = hardwareMap.get(CRServo.class, "intake"); // CRServo initialization
+        servoIntakeLeft = hardwareMap.get(CRServo.class, "intakeLeft");
+        servoIntakeRight = hardwareMap.get(CRServo.class, "intakeRight");
         servoMovingIntake = hardwareMap.get(Servo.class, "movingIntake");
 
         // Configure motors
@@ -116,15 +117,18 @@ public class FullRobotControl extends LinearOpMode {
 
             // CRServo control for intake
             if (gamepad2.a) {
-                servoIntake.setPower(1.0); // Rotate forward
+                servoIntakeLeft.setPower(1.0); // Rotate forward
+                servoIntakeRight.setPower(-1.0); // Rotate backward
             } else if (gamepad2.b) {
-                servoIntake.setPower(-1.0); // Rotate backward
+                servoIntakeLeft.setPower(-1.0); // Rotate backward
+                servoIntakeRight.setPower(1.0); // Rotate forward
             } else {
-                servoIntake.setPower(0.0); // Stop rotation
+                servoIntakeLeft.setPower(0.0); // Stop rotation
+                servoIntakeRight.setPower(0.0); // Stop rotation
             }
 
             // Servo control for moving intake
-            double movingIntakePosition = gamepad2.left_bumper ? 0.0 : (gamepad2.right_bumper ? 1.0 : 0.5);
+            double movingIntakePosition = gamepad2.left_bumper ? 0.93 : (gamepad2.right_bumper ? 0.55 : 0.93);
             servoMovingIntake.setPosition(Range.clip(movingIntakePosition, 0.0, 1.0));
 
             // Telemetry
@@ -133,7 +137,8 @@ public class FullRobotControl extends LinearOpMode {
                     frontLeftPower, frontRightPower, backLeftPower, backRightPower);
             telemetry.addData("ArmUD Motor", "Power: %.2f, Position: %d", armUD.getPower(), armUD.getCurrentPosition());
             telemetry.addData("ArmEx Motor", "Power: %.2f, Position: %d", armEx.getPower(), armEx.getCurrentPosition());
-            telemetry.addData("Intake CRServo", "Power: %.2f", servoIntake.getPower());
+            telemetry.addData("Intake Left CRServo", "Power: %.2f", servoIntakeLeft.getPower());
+            telemetry.addData("Intake Right CRServo", "Power: %.2f", servoIntakeRight.getPower());
             telemetry.addData("Moving Intake Servo", "Position: %.2f", servoMovingIntake.getPosition());
             telemetry.update();
         }
