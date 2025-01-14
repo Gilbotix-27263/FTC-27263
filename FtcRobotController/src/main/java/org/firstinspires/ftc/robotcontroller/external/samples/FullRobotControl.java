@@ -69,7 +69,7 @@ public class FullRobotControl extends LinearOpMode {
 
         // Move armEx backward until the touch sensor is triggered
         while (!isStopRequested() && !armExZeroSensor.isPressed()) {
-            armEx.setPower(-0.2); // Move armEx slowly toward zero position
+            armEx.setPower(0.2); // Move armEx slowly toward zero position
         }
 
         // Stop the motor and reset its encoder
@@ -122,6 +122,7 @@ public class FullRobotControl extends LinearOpMode {
                 armUD.setPower(armUDPower);
             } else {
                 armUD.setPower(0.0); // Hold position with brake mode
+                armUD.setZeroPowerBehavior(DcMotor.ZeroPowerBehavior.BRAKE);
             }
 
             // Control the arm extension using triggers (gamepad2)
