@@ -69,7 +69,7 @@ public class FullRobotControl extends LinearOpMode {
 
         // Move armEx backward until the touch sensor is triggered
         while (!isStopRequested() && !armExZeroSensor.isPressed()) {
-            armEx.setPower(-0.2); // Move armEx slowly toward zero position
+            armEx.setPower(0.2); // Move armEx slowly toward zero position
         }
 
         // Stop the motor and reset its encoder
@@ -137,7 +137,7 @@ public class FullRobotControl extends LinearOpMode {
 
             if (Math.abs(armExPower) > 0.1) {
                 // Prevent movement beyond 6000 or below 0
-                if ((armExCurrentPosition >= 6000 && armExPower > 0) || (armExCurrentPosition <= 0 && armExPower < 0)) {
+                if ((armExCurrentPosition <= -6000 && armExPower < 0) || (armExCurrentPosition >= 0 && armExPower < 0)) {
                     armEx.setPower(0.0); // Stop movement if out of range
                 } else {
                     armEx.setMode(DcMotor.RunMode.RUN_USING_ENCODER);
