@@ -87,6 +87,10 @@ public class FullRobotControl extends LinearOpMode {
         telemetry.addData("Status", "Initialized");
         telemetry.update();
 
+        // Track the target positions for armUD and armEx
+        int armUDTargetPosition = armUD.getCurrentPosition();
+        int armExTargetPosition = armEx.getCurrentPosition();
+
         // Wait for the start signal
         waitForStart();
 
@@ -120,9 +124,11 @@ public class FullRobotControl extends LinearOpMode {
             if (Math.abs(armUDPower) > 0.1) {
                 armUD.setMode(DcMotor.RunMode.RUN_USING_ENCODER);
                 armUD.setPower(armUDPower);
+                armUDTargetPosition = armUD.getCurrentPosition();
             } else {
-                armUD.setPower(0.0); // Hold position with brake mode
-                armUD.setZeroPowerBehavior(DcMotor.ZeroPowerBehavior.BRAKE);
+                armUD.setTargetPosition(armUDTargetPosition);
+                armUD.setMode(DcMotor.RunMode.RUN_TO_POSITION);
+                armUD.setPower(0.5); // Holding power
             }
 
             // Control the arm extension using triggers (gamepad2)
@@ -130,8 +136,11 @@ public class FullRobotControl extends LinearOpMode {
             if (Math.abs(armExPower) > 0.1) {
                 armEx.setMode(DcMotor.RunMode.RUN_USING_ENCODER);
                 armEx.setPower(armExPower * MAX_ARM_POWER);
+                armExTargetPosition = armEx.getCurrentPosition();
             } else {
-                armEx.setPower(0.0);
+                armEx.setTargetPosition(armExTargetPosition);
+                armEx.setMode(DcMotor.RunMode.RUN_TO_POSITION);
+                armEx.setPower(0.5); // Holding power
             }
 
             // Control the intake mechanism using buttons (gamepad2)
