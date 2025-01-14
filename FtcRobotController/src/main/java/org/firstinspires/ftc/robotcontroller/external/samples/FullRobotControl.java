@@ -29,7 +29,7 @@ public class FullRobotControl extends LinearOpMode {
     private ElapsedTime toggleTimer = new ElapsedTime();
 
     // Maximum power for arm motors
-    private static final double MAX_ARM_POWER = 0.4;
+    private static final double MAX_ARM_POWER = 0.8;
 
     @Override
     public void runOpMode() throws InterruptedException {
@@ -68,7 +68,7 @@ public class FullRobotControl extends LinearOpMode {
 
         // Move armEx backward until the touch sensor is triggered
         while (!isStopRequested() && !armExZeroSensor.isPressed()) {
-            armEx.setPower(-0.2); // Move armEx slowly toward zero position
+            armEx.setPower(0.2); // Move armEx slowly toward zero position
         }
 
         // Stop the motor and reset its encoder
