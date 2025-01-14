@@ -29,7 +29,7 @@ public class FullRobotControl extends LinearOpMode {
     private ElapsedTime toggleTimer = new ElapsedTime();
 
     // Maximum power for arm motors
-    private static final double MAX_ARM_POWER = 0.8;
+    private static final double MAX_ARM_POWER = 0.4;
 
     @Override
     public void runOpMode() throws InterruptedException {
@@ -55,6 +55,7 @@ public class FullRobotControl extends LinearOpMode {
         // Reset and configure encoders for arm motors
         armUD.setMode(DcMotor.RunMode.STOP_AND_RESET_ENCODER);
         armUD.setMode(DcMotor.RunMode.RUN_USING_ENCODER);
+        armUD.setZeroPowerBehavior(DcMotor.ZeroPowerBehavior.BRAKE); // Enable brake mode for armUD
 
         armEx.setMode(DcMotor.RunMode.STOP_AND_RESET_ENCODER);
         armEx.setMode(DcMotor.RunMode.RUN_USING_ENCODER);
@@ -68,7 +69,7 @@ public class FullRobotControl extends LinearOpMode {
 
         // Move armEx backward until the touch sensor is triggered
         while (!isStopRequested() && !armExZeroSensor.isPressed()) {
-            armEx.setPower(0.2); // Move armEx slowly toward zero position
+            armEx.setPower(-0.2); // Move armEx slowly toward zero position
         }
 
         // Stop the motor and reset its encoder
@@ -120,7 +121,7 @@ public class FullRobotControl extends LinearOpMode {
                 armUD.setMode(DcMotor.RunMode.RUN_USING_ENCODER);
                 armUD.setPower(armUDPower);
             } else {
-                armUD.setPower(0.0);
+                armUD.setPower(0.0); // Hold position with brake mode
             }
 
             // Control the arm extension using triggers (gamepad2)
