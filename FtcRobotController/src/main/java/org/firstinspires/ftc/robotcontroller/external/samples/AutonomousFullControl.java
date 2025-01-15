@@ -15,20 +15,22 @@ import org.firstinspires.ftc.robotcore.external.navigation.YawPitchRollAngles;
 
 @Autonomous(group = "Main")
 public class AutonomousFullControl extends LinearOpMode {
+    // Declare hardware components
     private DcMotor motor1, motor2, motor3, motor4; // Drive motors
-    private DcMotor armUD, armEx; // Arm motors
-    private CRServo servoIntakeLeft, servoIntakeRight; // Intake CRServos
-    private Servo servoMovingIntake; // Moving intake servo
-    private TouchSensor armExZeroSensor; // Arm extension zero position sensor
-    private IMU imu; // IMU for orientation
-    private DistanceSensor distanceSensor; // Distance sensor
+    private DcMotor armUD, armEx; // Arm motors for up/down and extension
+    private CRServo servoIntakeLeft, servoIntakeRight; // Intake CRServos for picking up objects
+    private Servo servoMovingIntake; // Servo for moving the intake mechanism
+    private TouchSensor armExZeroSensor; // Sensor to detect zero position of arm extension
+    private IMU imu; // IMU for orientation control
+    private DistanceSensor distanceSensor; // Distance sensor for object detection (if needed)
 
-    private static final double DRIVE_SPEED = 0.5;
-    private static final double TURN_SPEED = 0.3;
-    private static final int COUNTS_PER_REV = 537; // Encoder counts per revolution
-    private static final double WHEEL_DIAMETER = 4.0; // Wheel diameter in inches
-    private static final double COUNTS_PER_INCH = (COUNTS_PER_REV) / (Math.PI * WHEEL_DIAMETER);
-    private static final double MAX_ARM_POWER = 0.4;
+    // Constants for robot movement and control
+    private static final double DRIVE_SPEED = 0.5; // Speed for driving
+    private static final double TURN_SPEED = 0.3; // Speed for turning
+    private static final int COUNTS_PER_REV = 537; // Encoder counts per revolution (motor-specific)
+    private static final double WHEEL_DIAMETER = 4.0; // Diameter of the wheels in inches
+    private static final double COUNTS_PER_INCH = (COUNTS_PER_REV) / (Math.PI * WHEEL_DIAMETER); // Encoder counts per inch
+    private static final double MAX_ARM_POWER = 0.4; // Maximum power for arm motors
 
     @Override
     public void runOpMode() {
@@ -59,6 +61,7 @@ public class AutonomousFullControl extends LinearOpMode {
         motor3.setDirection(DcMotor.Direction.FORWARD);
         motor4.setDirection(DcMotor.Direction.REVERSE);
 
+        // Reset motor encoders and set initial position for servo
         resetEncoders();
         servoMovingIntake.setPosition(0.1333);
 
@@ -66,7 +69,7 @@ public class AutonomousFullControl extends LinearOpMode {
         telemetry.update();
         waitForStart();
 
-        // Autonomous sequence starting at 5A
+        // Autonomous sequence
         moveToGridCoordinate("5A", "6B"); // Move to game element near 6B/6C
         collectGameObject();               // Collect the game element
 
@@ -80,63 +83,70 @@ public class AutonomousFullControl extends LinearOpMode {
         telemetry.update();
     }
 
+    // Start arm extension asynchronously
     private void startExtendArm() {
         telemetry.addData("Action", "Extending arm early...");
         telemetry.update();
 
         new Thread(() -> {
-            extendArm(400);
-            moveArmToPosition(2000); // Move armUD to position 2000 simultaneously
-        }).start(); // Extend arm asynchronously
+            extendArm(400); // Extend the arm partially
+            moveArmToPosition(2000); // Move arm up to position 2000 simultaneously
+        }).start();
     }
 
+    // Move between grid coordinates (e.g., "5A" to "6B")
     private void moveToGridCoordinate(String start, String end) {
-        int[] startPos = convertToGridPosition(start);
-        int[] endPos = convertToGridPosition(end);
-        moveToGridPosition(endPos[0], endPos[1]);
+        int[] startPos = convertToGridPosition(start); // Convert start position
+        int[] endPos = convertToGridPosition(end); // Convert end position
+        moveToGridPosition(endPos[0], endPos[1]); // Move to target position
     }
 
+    // Convert grid positions like "5A" to numerical (x, y) coordinates
     private int[] convertToGridPosition(String coordinate) {
-        int y = Integer.parseInt(coordinate.substring(0, 1)) - 1; // Row to Y
-        int x = coordinate.charAt(1) - 'A'; // Column to X
+        int y = Integer.parseInt(coordinate.substring(0, 1)) - 1; // Convert row to Y
+        int x = coordinate.charAt(1) - 'A'; // Convert column to X
         return new int[] {x, y};
     }
 
+    // Move to a specific grid position (x, y)
     private void moveToGridPosition(int x, int y) {
-        int deltaX = x * (int) (24 * COUNTS_PER_INCH); // X in inches
-        int deltaY = y * (int) (24 * COUNTS_PER_INCH); // Y in inches
+        int deltaX = x * (int) (24 * COUNTS_PER_INCH); // Calculate distance in X direction
+        int deltaY = y * (int) (24 * COUNTS_PER_INCH); // Calculate distance in Y direction
 
         // Move in Y direction first (rows)
         driveStraight(deltaY, DRIVE_SPEED);
-        spinToAngle(0); // Adjust to move in X direction
+        spinToAngle(0); // Adjust orientation to move in X direction
 
         // Move in X direction (columns)
         driveStraight(deltaX, DRIVE_SPEED);
     }
 
+    // Collect game object using the intake mechanism
     private void collectGameObject() {
         telemetry.addData("Action", "Collecting game object...");
         telemetry.update();
 
         moveArmToPosition(200);        // Lower the arm to collect position
-        controlIntake(true, 2000);    // Intake forward for 2 seconds
+        controlIntake(true, 2000);    // Activate intake to collect object
         moveArmToPosition(0);         // Raise the arm back
 
         telemetry.addData("Action", "Game object collected");
         telemetry.update();
     }
 
+    // Score the collected game object
     private void scoreGameObject() {
         telemetry.addData("Action", "Scoring game object...");
         telemetry.update();
 
         controlIntake(false, 2000);   // Reverse intake to release the game piece
-        retractArm();                 // Retract arm back
+        retractArm();                 // Retract the arm back to initial position
 
         telemetry.addData("Action", "Game object scored");
         telemetry.update();
     }
 
+    // Move arm up/down to a specific position
     private void moveArmToPosition(int targetPosition) {
         armUD.setTargetPosition(targetPosition);
         armUD.setMode(DcMotor.RunMode.RUN_TO_POSITION);
@@ -148,9 +158,10 @@ public class AutonomousFullControl extends LinearOpMode {
         }
     }
 
+    // Extend the arm to a specific encoder count
     private void extendArm(int encoderCounts) {
         if (armExZeroSensor.isPressed()) {
-            armEx.setMode(DcMotor.RunMode.STOP_AND_RESET_ENCODER);
+            armEx.setMode(DcMotor.RunMode.STOP_AND_RESET_ENCODER); // Reset encoder if sensor is pressed
         }
 
         armEx.setTargetPosition(encoderCounts);
@@ -163,21 +174,24 @@ public class AutonomousFullControl extends LinearOpMode {
         }
     }
 
+    // Retract the arm back to zero position
     private void retractArm() {
-        extendArm(0);
+        extendArm(0); // Set arm extension to zero
     }
 
+    // Control the intake system (forward or reverse)
     private void controlIntake(boolean forward, long duration) {
-        double power = forward ? 1.0 : -1.0;
+        double power = forward ? 1.0 : -1.0; // Set power based on direction
         servoIntakeLeft.setPower(power);
         servoIntakeRight.setPower(-power);
 
-        sleep(duration);
+        sleep(duration); // Run intake for the specified duration
 
-        servoIntakeLeft.setPower(0);
+        servoIntakeLeft.setPower(0); // Stop intake
         servoIntakeRight.setPower(0);
     }
 
+    // Reset encoders for all drive motors
     private void resetEncoders() {
         motor1.setMode(DcMotor.RunMode.STOP_AND_RESET_ENCODER);
         motor2.setMode(DcMotor.RunMode.STOP_AND_RESET_ENCODER);
@@ -190,10 +204,12 @@ public class AutonomousFullControl extends LinearOpMode {
         motor4.setMode(DcMotor.RunMode.RUN_USING_ENCODER);
     }
 
+    // Check if all drive motors are still moving
     private boolean motorsAreBusy() {
         return motor1.isBusy() && motor2.isBusy() && motor3.isBusy() && motor4.isBusy();
     }
 
+    // Stop all drive motors
     private void stopMotors() {
         motor1.setPower(0);
         motor2.setPower(0);
@@ -201,12 +217,14 @@ public class AutonomousFullControl extends LinearOpMode {
         motor4.setPower(0);
     }
 
+    // Normalize angle to range [-180, 180]
     private double normalizeAngle(double angle) {
         while (angle > 180) angle -= 360;
         while (angle < -180) angle += 360;
         return angle;
     }
 
+    // Drive the robot straight for a specified distance (in encoder counts)
     private void driveStraight(int encoderCounts, double speed) {
         resetEncoders();
 
@@ -232,13 +250,14 @@ public class AutonomousFullControl extends LinearOpMode {
         stopMotors();
     }
 
+    // Spin the robot to a specific angle using the IMU
     private void spinToAngle(double targetAngle) {
         while (opModeIsActive()) {
             YawPitchRollAngles orientation = imu.getRobotYawPitchRollAngles();
             double currentYaw = orientation.getYaw(AngleUnit.DEGREES);
             double error = normalizeAngle(targetAngle - currentYaw);
 
-            if (Math.abs(error) < 1.0) { // Deadband for stopping
+            if (Math.abs(error) < 1.0) { // Stop if within deadband
                 stopMotors();
                 break;
             }
