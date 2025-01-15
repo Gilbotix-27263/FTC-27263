@@ -55,30 +55,13 @@ public class FullRobotControl extends LinearOpMode {
         // Reset and configure encoders for arm motors
         armUD.setMode(DcMotor.RunMode.STOP_AND_RESET_ENCODER);
         armUD.setMode(DcMotor.RunMode.RUN_USING_ENCODER);
-        armUD.setZeroPowerBehavior(DcMotor.ZeroPowerBehavior.BRAKE);
+        armUD.setZeroPowerBehavior(DcMotor.ZeroPowerBehavior.BRAKE); // Enable brake mode for armUD
 
         armEx.setMode(DcMotor.RunMode.STOP_AND_RESET_ENCODER);
         armEx.setMode(DcMotor.RunMode.RUN_USING_ENCODER);
 
         // Initialize toggle timer for speed control
         toggleTimer.reset();
-
-        // Calibrate the arm extension motor to its zero position using the touch sensor
-        telemetry.addData("Calibration", "Calibrating armEx to zero position...");
-        telemetry.update();
-
-        // Move armEx backward until the touch sensor is triggered
-        while (!isStopRequested() && !armExZeroSensor.isPressed()) {
-            armEx.setPower(0.2);
-        }
-
-        // Stop the motor and reset its encoder
-        armEx.setPower(0.0);
-        armEx.setMode(DcMotor.RunMode.STOP_AND_RESET_ENCODER);
-        armEx.setMode(DcMotor.RunMode.RUN_USING_ENCODER);
-
-        telemetry.addData("Calibration", "Completed.");
-        telemetry.update();
 
         // Set the moving intake servo to its initial position
         servoMovingIntake.setPosition(0.1333);
@@ -96,10 +79,16 @@ public class FullRobotControl extends LinearOpMode {
 
         while (opModeIsActive()) {
 
+            // Reset armEx encoder whenever the zero sensor is pressed
+            if (armExZeroSensor.isPressed()) {
+                armEx.setMode(DcMotor.RunMode.STOP_AND_RESET_ENCODER);
+                armEx.setMode(DcMotor.RunMode.RUN_USING_ENCODER);
+            }
+
             // Handle speed toggle based on gamepad input
             if (gamepad1.left_bumper && toggleTimer.seconds() > 0.5) {
                 isSlowMode = !isSlowMode;
-                speedMultiplier = isSlowMode ? 0.3 : 1.0;
+                speedMultiplier = isSlowMode ? 0.3 : 1.0; // Toggle speed multiplier
                 toggleTimer.reset();
             }
 
@@ -128,7 +117,7 @@ public class FullRobotControl extends LinearOpMode {
             } else {
                 armUD.setTargetPosition(armUDTargetPosition);
                 armUD.setMode(DcMotor.RunMode.RUN_TO_POSITION);
-                armUD.setPower(0.5);
+                armUD.setPower(0.5); // Holding power
             }
 
             // Control the arm extension using triggers (gamepad2)
@@ -136,8 +125,9 @@ public class FullRobotControl extends LinearOpMode {
             int armExCurrentPosition = armEx.getCurrentPosition();
 
             if (Math.abs(armExPower) > 0.1) {
+                // Prevent movement beyond limits
                 if ((armExCurrentPosition <= -5500 && armExPower < 0) || (armExCurrentPosition >= 0 && armExPower > 0)) {
-                    armEx.setPower(0.0);
+                    armEx.setPower(0.0); // Stop movement if out of range
                 } else {
                     armEx.setMode(DcMotor.RunMode.RUN_USING_ENCODER);
                     armEx.setPower(armExPower * MAX_ARM_POWER);
@@ -146,18 +136,18 @@ public class FullRobotControl extends LinearOpMode {
             } else {
                 armEx.setTargetPosition(armExTargetPosition);
                 armEx.setMode(DcMotor.RunMode.RUN_TO_POSITION);
-                armEx.setPower(0.5);
+                armEx.setPower(0.5); // Holding power
             }
 
             // Control the intake mechanism using buttons (gamepad2)
             if (gamepad2.a) {
-                servoIntakeLeft.setPower(1.0);
-                servoIntakeRight.setPower(-1.0);
+                servoIntakeLeft.setPower(1.0); // Intake forward
+                servoIntakeRight.setPower(-1.0); // Opposite direction
             } else if (gamepad2.b) {
-                servoIntakeLeft.setPower(-1.0);
-                servoIntakeRight.setPower(1.0);
+                servoIntakeLeft.setPower(-1.0); // Intake backward
+                servoIntakeRight.setPower(1.0); // Opposite direction
             } else {
-                servoIntakeLeft.setPower(0.0);
+                servoIntakeLeft.setPower(0.0); // Stop intake
                 servoIntakeRight.setPower(0.0);
             }
 
