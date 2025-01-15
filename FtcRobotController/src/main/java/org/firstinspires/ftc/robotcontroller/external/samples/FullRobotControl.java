@@ -94,7 +94,7 @@ public class FullRobotControl extends LinearOpMode {
 
             // Calculate driving power for all wheels based on joystick input
             double drive = gamepad1.left_stick_y * speedMultiplier;
-            double turn = gamepad1.right_stick_x * speedMultiplier;
+            double turn = -gamepad1.right_stick_x * speedMultiplier;
             double strafe = -gamepad1.left_stick_x * speedMultiplier;
 
             double frontLeftPower = drive + turn + strafe;

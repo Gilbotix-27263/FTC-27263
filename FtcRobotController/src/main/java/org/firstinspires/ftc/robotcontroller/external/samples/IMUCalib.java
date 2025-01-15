@@ -9,9 +9,8 @@ import org.firstinspires.ftc.robotcore.external.navigation.AngleUnit;
 import org.firstinspires.ftc.robotcore.external.navigation.AngularVelocity;
 import org.firstinspires.ftc.robotcore.external.navigation.YawPitchRollAngles;
 
-@TeleOp
-@Disabled
-public class IMUTestSimple extends LinearOpMode {
+@TeleOp(group = "Calib")
+public class IMUCalib extends LinearOpMode {
     // IMU sensor instance
     IMU imu;
 
