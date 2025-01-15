@@ -81,11 +81,12 @@ public class FullRobotControl extends LinearOpMode {
         telemetry.update();
 
         // Set the moving intake servo to its initial position
-        servoMovingIntake.setPosition(0.0);
+        servoMovingIntake.setPosition(0.1333);
 
         // Signal that the robot is ready
         telemetry.addData("Status", "Initialized");
         telemetry.update();
+        
 
         // Track the target positions for armUD and armEx
         int armUDTargetPosition = armUD.getCurrentPosition();
@@ -106,7 +107,7 @@ public class FullRobotControl extends LinearOpMode {
             // Calculate driving power for all wheels based on joystick input
             double drive = gamepad1.left_stick_y * speedMultiplier;
             double turn = gamepad1.right_stick_x * speedMultiplier;
-            double strafe = gamepad1.left_stick_x * speedMultiplier;
+            double strafe = -gamepad1.left_stick_x * speedMultiplier;
 
             double frontLeftPower = drive + turn + strafe;
             double frontRightPower = -drive - turn + strafe;
@@ -120,7 +121,7 @@ public class FullRobotControl extends LinearOpMode {
             motor4.setPower(backRightPower);
 
             // Control the up/down movement of the arm using the left joystick (gamepad2)
-            double armUDPower = -gamepad2.left_stick_y * MAX_ARM_POWER;
+            double armUDPower = gamepad2.left_stick_y * MAX_ARM_POWER;
             if (Math.abs(armUDPower) > 0.1) {
                 armUD.setMode(DcMotor.RunMode.RUN_USING_ENCODER);
                 armUD.setPower(armUDPower);
@@ -137,7 +138,7 @@ public class FullRobotControl extends LinearOpMode {
 
             if (Math.abs(armExPower) > 0.1) {
                 // Prevent movement beyond 6000 or below 0
-                if ((armExCurrentPosition <= -6000 && armExPower < 0) || (armExCurrentPosition >= 0 && armExPower < 0)) {
+                if ((armExCurrentPosition <= -5500 && armExPower < 0) || (armExCurrentPosition >= 0 && armExPower < 0)) {
                     armEx.setPower(0.0); // Stop movement if out of range
                 } else {
                     armEx.setMode(DcMotor.RunMode.RUN_USING_ENCODER);
@@ -163,7 +164,7 @@ public class FullRobotControl extends LinearOpMode {
             }
 
             // Control the moving intake servo using bumpers (gamepad2)
-            double movingIntakePosition = gamepad2.left_bumper ? 0.93 : (gamepad2.right_bumper ? 0.55 : 0.93);
+            double movingIntakePosition = gamepad2.left_bumper ? 0.1333 : (gamepad2.right_bumper ? 0.8333 : 0.5);
             servoMovingIntake.setPosition(Range.clip(movingIntakePosition, 0.0, 1.0));
 
             // Display telemetry data for debugging
