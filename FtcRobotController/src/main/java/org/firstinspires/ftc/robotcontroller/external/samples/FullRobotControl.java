@@ -55,7 +55,7 @@ public class FullRobotControl extends LinearOpMode {
         // Reset and configure encoders for arm motors
         armUD.setMode(DcMotor.RunMode.STOP_AND_RESET_ENCODER);
         armUD.setMode(DcMotor.RunMode.RUN_USING_ENCODER);
-        armUD.setZeroPowerBehavior(DcMotor.ZeroPowerBehavior.BRAKE); // Enable brake mode for armUD
+        armUD.setZeroPowerBehavior(DcMotor.ZeroPowerBehavior.BRAKE);
 
         armEx.setMode(DcMotor.RunMode.STOP_AND_RESET_ENCODER);
         armEx.setMode(DcMotor.RunMode.RUN_USING_ENCODER);
@@ -69,7 +69,7 @@ public class FullRobotControl extends LinearOpMode {
 
         // Move armEx backward until the touch sensor is triggered
         while (!isStopRequested() && !armExZeroSensor.isPressed()) {
-            armEx.setPower(0.2); // Move armEx slowly toward zero position
+            armEx.setPower(0.2);
         }
 
         // Stop the motor and reset its encoder
@@ -86,7 +86,6 @@ public class FullRobotControl extends LinearOpMode {
         // Signal that the robot is ready
         telemetry.addData("Status", "Initialized");
         telemetry.update();
-        
 
         // Track the target positions for armUD and armEx
         int armUDTargetPosition = armUD.getCurrentPosition();
@@ -100,7 +99,7 @@ public class FullRobotControl extends LinearOpMode {
             // Handle speed toggle based on gamepad input
             if (gamepad1.left_bumper && toggleTimer.seconds() > 0.5) {
                 isSlowMode = !isSlowMode;
-                speedMultiplier = isSlowMode ? 0.3 : 1.0; // Toggle speed multiplier
+                speedMultiplier = isSlowMode ? 0.3 : 1.0;
                 toggleTimer.reset();
             }
 
@@ -129,7 +128,7 @@ public class FullRobotControl extends LinearOpMode {
             } else {
                 armUD.setTargetPosition(armUDTargetPosition);
                 armUD.setMode(DcMotor.RunMode.RUN_TO_POSITION);
-                armUD.setPower(0.5); // Holding power
+                armUD.setPower(0.5);
             }
 
             // Control the arm extension using triggers (gamepad2)
@@ -137,9 +136,8 @@ public class FullRobotControl extends LinearOpMode {
             int armExCurrentPosition = armEx.getCurrentPosition();
 
             if (Math.abs(armExPower) > 0.1) {
-                // Prevent movement beyond 6000 or below 0
-                if ((armExCurrentPosition <= -5500 && armExPower < 0) || (armExCurrentPosition >= 0 && armExPower < 0)) {
-                    armEx.setPower(0.0); // Stop movement if out of range
+                if ((armExCurrentPosition <= -5500 && armExPower < 0) || (armExCurrentPosition >= 0 && armExPower > 0)) {
+                    armEx.setPower(0.0);
                 } else {
                     armEx.setMode(DcMotor.RunMode.RUN_USING_ENCODER);
                     armEx.setPower(armExPower * MAX_ARM_POWER);
@@ -148,18 +146,18 @@ public class FullRobotControl extends LinearOpMode {
             } else {
                 armEx.setTargetPosition(armExTargetPosition);
                 armEx.setMode(DcMotor.RunMode.RUN_TO_POSITION);
-                armEx.setPower(0.5); // Holding power
+                armEx.setPower(0.5);
             }
 
             // Control the intake mechanism using buttons (gamepad2)
             if (gamepad2.a) {
-                servoIntakeLeft.setPower(1.0); // Intake forward
-                servoIntakeRight.setPower(-1.0); // Opposite direction
+                servoIntakeLeft.setPower(1.0);
+                servoIntakeRight.setPower(-1.0);
             } else if (gamepad2.b) {
-                servoIntakeLeft.setPower(-1.0); // Intake backward
-                servoIntakeRight.setPower(1.0); // Opposite direction
+                servoIntakeLeft.setPower(-1.0);
+                servoIntakeRight.setPower(1.0);
             } else {
-                servoIntakeLeft.setPower(0.0); // Stop intake
+                servoIntakeLeft.setPower(0.0);
                 servoIntakeRight.setPower(0.0);
             }
 
