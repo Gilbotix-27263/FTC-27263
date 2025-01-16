@@ -73,7 +73,7 @@ public class FullRobotControl extends LinearOpMode {
         telemetry.update();
 
         while (!armExZeroSensor.isPressed() && !isStopRequested()) {
-            armEx.setPower(-0.2); // Move the arm down slowly
+            armEx.setPower(0.2); // Move the arm down slowly
         }
 
         armEx.setPower(0.0); // Stop the motor once zeroed
