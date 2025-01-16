@@ -105,6 +105,7 @@ public class FullRobotControl extends LinearOpMode {
             if (armExZeroSensor.isPressed() && zeroDelayTimer.seconds() > ZERO_DELAY) {
                 armEx.setMode(DcMotor.RunMode.STOP_AND_RESET_ENCODER);
                 armEx.setMode(DcMotor.RunMode.RUN_USING_ENCODER);
+                armEx.setPower(0.0);
                 zeroDelayTimer.reset(); // Reset delay timer after resetting encoder
             }
 
