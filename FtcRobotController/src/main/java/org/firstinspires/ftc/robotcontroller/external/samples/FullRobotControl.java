@@ -35,6 +35,9 @@ public class FullRobotControl extends LinearOpMode {
 
     private static final double ZERO_DELAY = 1.0; // Minimum delay in seconds between zeroing actions
 
+    // Arm state flag
+    private boolean armExZeroed = false;
+
     @Override
     public void runOpMode() throws InterruptedException {
 
@@ -77,14 +80,15 @@ public class FullRobotControl extends LinearOpMode {
 
         zeroDelayTimer.reset();
         while (!armExZeroSensor.isPressed() && !isStopRequested()) {
-            armEx.setPower(0.2); // Move the arm down slowly
+            armEx.setPower(-0.2); // Move the arm down slowly
         }
 
-        if (zeroDelayTimer.seconds() > ZERO_DELAY) {
+        if (!armExZeroed && armExZeroSensor.isPressed()) {
             armEx.setPower(0.0); // Stop the motor once zeroed
             armEx.setMode(DcMotor.RunMode.STOP_AND_RESET_ENCODER);
             armEx.setMode(DcMotor.RunMode.RUN_USING_ENCODER);
             zeroDelayTimer.reset(); // Reset the timer after zeroing
+            armExZeroed = true; // Set zeroed flag
         }
 
         telemetry.addData("Status", "ArmEx Zeroed");
@@ -103,11 +107,15 @@ public class FullRobotControl extends LinearOpMode {
 
         while (opModeIsActive()) {
 
-            // Reset armEx encoder whenever the zero sensor is pressed, with delay
-            if (armExZeroSensor.isPressed() && zeroDelayTimer.seconds() > ZERO_DELAY) {
+            // Reset armEx encoder whenever the zero sensor is pressed, with delay and flag check
+            if (armExZeroSensor.isPressed() && zeroDelayTimer.seconds() > ZERO_DELAY && !armExZeroed) {
+                armEx.setPower(0.0); // Ensure the motor stops immediately
                 armEx.setMode(DcMotor.RunMode.STOP_AND_RESET_ENCODER);
                 armEx.setMode(DcMotor.RunMode.RUN_USING_ENCODER);
                 zeroDelayTimer.reset(); // Reset delay timer after resetting encoder
+                armExZeroed = true; // Prevent further movement
+            } else if (!armExZeroSensor.isPressed()) {
+                armExZeroed = false; // Reset the flag if the sensor is released
             }
 
             // Handle speed toggle based on gamepad input
