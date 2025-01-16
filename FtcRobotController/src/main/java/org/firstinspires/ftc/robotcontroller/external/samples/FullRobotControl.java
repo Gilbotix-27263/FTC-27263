@@ -150,9 +150,10 @@ public class FullRobotControl extends LinearOpMode {
 
             if (Math.abs(armExPower) > 0.1) {
                 // Prevent movement beyond limits
-                if ((armExCurrentPosition <= -5500 && armExPower < 0) || (armExCurrentPosition >= 0 && armExPower > 0)) {
+                if ((armExCurrentPosition <= -5500 && armExPower < 0) || (armExCurrentPosition >= 0 && armExPower > 0)) ||  (armExZeroSensor.isPressed()){
                     armEx.setPower(0.0); // Stop movement if out of range
-                } else {
+                }
+                else {
                     armEx.setMode(DcMotor.RunMode.RUN_USING_ENCODER);
                     armEx.setPower(armExPower * MAX_ARM_POWER);
                     armExTargetPosition = armEx.getCurrentPosition();
