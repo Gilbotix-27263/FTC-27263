@@ -29,7 +29,9 @@ public class FullRobotControl extends LinearOpMode {
     private ElapsedTime toggleTimer = new ElapsedTime();
 
     // Maximum power for arm motors
-    private static final double MAX_ARM_POWER = 0.4;
+    private static final double MAX_ARMUD_POWER = 0.4;
+    private static final double MAX_ARMEX_POWER = 0.8;
+
 
     @Override
     public void runOpMode() throws InterruptedException {
@@ -109,7 +111,7 @@ public class FullRobotControl extends LinearOpMode {
             motor4.setPower(backRightPower);
 
             // Control the up/down movement of the arm using the left joystick (gamepad2)
-            double armUDPower = gamepad2.left_stick_y * MAX_ARM_POWER;
+            double armUDPower = gamepad2.left_stick_y * MAX_ARMUD_POWER;
             if (Math.abs(armUDPower) > 0.1) {
                 armUD.setMode(DcMotor.RunMode.RUN_USING_ENCODER);
                 armUD.setPower(armUDPower);
@@ -130,7 +132,7 @@ public class FullRobotControl extends LinearOpMode {
                     armEx.setPower(0.0); // Stop movement if out of range
                 } else {
                     armEx.setMode(DcMotor.RunMode.RUN_USING_ENCODER);
-                    armEx.setPower(armExPower * MAX_ARM_POWER);
+                    armEx.setPower(armExPower * MAX_ARMEX_POWER);
                     armExTargetPosition = armEx.getCurrentPosition();
                 }
             } else {
