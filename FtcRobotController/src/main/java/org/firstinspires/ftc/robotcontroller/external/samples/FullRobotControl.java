@@ -30,7 +30,9 @@ public class FullRobotControl extends LinearOpMode {
     private ElapsedTime zeroDelayTimer = new ElapsedTime(); // Timer for zeroing delay
 
     // Maximum power for arm motors
-    private static final double MAX_ARM_POWER = 0.4;
+    private static final double MAX_ARMUD_POWER = 0.4;
+    private static final double MAX_ARMEX_POWER = 1;
+
     private static final double ZERO_DELAY = 1.0; // Minimum delay in seconds between zeroing actions
 
     @Override
@@ -105,7 +107,6 @@ public class FullRobotControl extends LinearOpMode {
             if (armExZeroSensor.isPressed() && zeroDelayTimer.seconds() > ZERO_DELAY) {
                 armEx.setMode(DcMotor.RunMode.STOP_AND_RESET_ENCODER);
                 armEx.setMode(DcMotor.RunMode.RUN_USING_ENCODER);
-                armEx.setPower(0.0);
                 zeroDelayTimer.reset(); // Reset delay timer after resetting encoder
             }
 
@@ -133,7 +134,7 @@ public class FullRobotControl extends LinearOpMode {
             motor4.setPower(backRightPower);
 
             // Control the up/down movement of the arm using the left joystick (gamepad2)
-            double armUDPower = gamepad2.left_stick_y * MAX_ARM_POWER;
+            double armUDPower = gamepad2.left_stick_y * MAX_ARMUD_POWER;
             if (Math.abs(armUDPower) > 0.1) {
                 armUD.setMode(DcMotor.RunMode.RUN_USING_ENCODER);
                 armUD.setPower(armUDPower);
@@ -154,7 +155,7 @@ public class FullRobotControl extends LinearOpMode {
                     armEx.setPower(0.0); // Stop movement if out of range
                 } else {
                     armEx.setMode(DcMotor.RunMode.RUN_USING_ENCODER);
-                    armEx.setPower(armExPower * MAX_ARM_POWER);
+                    armEx.setPower(armExPower * MAX_ARMEX_POWER);
                     armExTargetPosition = armEx.getCurrentPosition();
                 }
             } else {
