@@ -68,6 +68,21 @@ public class FullRobotControl extends LinearOpMode {
         // Set the moving intake servo to its initial position
         servoMovingIntake.setPosition(0.1333);
 
+        // Zero the armEx at the start of the program
+        telemetry.addData("Status", "Zeroing ArmEx...");
+        telemetry.update();
+
+        while (!armExZeroSensor.isPressed() && !isStopRequested()) {
+            armEx.setPower(-0.2); // Move the arm down slowly
+        }
+
+        armEx.setPower(0.0); // Stop the motor once zeroed
+        armEx.setMode(DcMotor.RunMode.STOP_AND_RESET_ENCODER);
+        armEx.setMode(DcMotor.RunMode.RUN_USING_ENCODER);
+
+        telemetry.addData("Status", "ArmEx Zeroed");
+        telemetry.update();
+
         // Signal that the robot is ready
         telemetry.addData("Status", "Initialized");
         telemetry.update();
