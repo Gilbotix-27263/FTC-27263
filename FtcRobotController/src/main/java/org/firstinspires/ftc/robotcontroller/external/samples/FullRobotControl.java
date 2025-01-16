@@ -100,6 +100,7 @@ public class FullRobotControl extends LinearOpMode {
             if (armExZeroSensor.isPressed()) {
                 armEx.setMode(DcMotor.RunMode.STOP_AND_RESET_ENCODER);
                 armEx.setMode(DcMotor.RunMode.RUN_USING_ENCODER);
+                wait(3000);
             }
 
             // Handle speed toggle based on gamepad input
