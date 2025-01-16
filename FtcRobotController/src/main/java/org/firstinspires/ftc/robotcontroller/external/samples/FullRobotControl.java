@@ -73,13 +73,17 @@ public class FullRobotControl extends LinearOpMode {
         telemetry.addData("Status", "Zeroing ArmEx...");
         telemetry.update();
 
+        zeroDelayTimer.reset();
         while (!armExZeroSensor.isPressed() && !isStopRequested()) {
             armEx.setPower(0.2); // Move the arm down slowly
         }
 
-        armEx.setPower(0.0); // Stop the motor once zeroed
-        armEx.setMode(DcMotor.RunMode.STOP_AND_RESET_ENCODER);
-        armEx.setMode(DcMotor.RunMode.RUN_USING_ENCODER);
+        if (zeroDelayTimer.seconds() > ZERO_DELAY) {
+            armEx.setPower(0.0); // Stop the motor once zeroed
+            armEx.setMode(DcMotor.RunMode.STOP_AND_RESET_ENCODER);
+            armEx.setMode(DcMotor.RunMode.RUN_USING_ENCODER);
+            zeroDelayTimer.reset(); // Reset the timer after zeroing
+        }
 
         telemetry.addData("Status", "ArmEx Zeroed");
         telemetry.update();
