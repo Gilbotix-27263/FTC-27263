@@ -27,11 +27,11 @@ public class FullRobotControl extends LinearOpMode {
     private double speedMultiplier = 1.0;
     private boolean isSlowMode = false;
     private ElapsedTime toggleTimer = new ElapsedTime();
+    private ElapsedTime zeroDelayTimer = new ElapsedTime(); // Timer for zeroing delay
 
     // Maximum power for arm motors
-    private static final double MAX_ARMUD_POWER = 0.4;
-    private static final double MAX_ARMEX_POWER = 0.8;
-
+    private static final double MAX_ARM_POWER = 0.4;
+    private static final double ZERO_DELAY = 1.0; // Minimum delay in seconds between zeroing actions
 
     @Override
     public void runOpMode() throws InterruptedException {
@@ -64,6 +64,7 @@ public class FullRobotControl extends LinearOpMode {
 
         // Initialize toggle timer for speed control
         toggleTimer.reset();
+        zeroDelayTimer.reset(); // Initialize zeroing delay timer
 
         // Set the moving intake servo to its initial position
         servoMovingIntake.setPosition(0.1333);
@@ -96,11 +97,11 @@ public class FullRobotControl extends LinearOpMode {
 
         while (opModeIsActive()) {
 
-            // Reset armEx encoder whenever the zero sensor is pressed
-            if (armExZeroSensor.isPressed()) {
+            // Reset armEx encoder whenever the zero sensor is pressed, with delay
+            if (armExZeroSensor.isPressed() && zeroDelayTimer.seconds() > ZERO_DELAY) {
                 armEx.setMode(DcMotor.RunMode.STOP_AND_RESET_ENCODER);
                 armEx.setMode(DcMotor.RunMode.RUN_USING_ENCODER);
-                wait(3000);
+                zeroDelayTimer.reset(); // Reset delay timer after resetting encoder
             }
 
             // Handle speed toggle based on gamepad input
@@ -127,7 +128,7 @@ public class FullRobotControl extends LinearOpMode {
             motor4.setPower(backRightPower);
 
             // Control the up/down movement of the arm using the left joystick (gamepad2)
-            double armUDPower = gamepad2.left_stick_y * MAX_ARMUD_POWER;
+            double armUDPower = gamepad2.left_stick_y * MAX_ARM_POWER;
             if (Math.abs(armUDPower) > 0.1) {
                 armUD.setMode(DcMotor.RunMode.RUN_USING_ENCODER);
                 armUD.setPower(armUDPower);
@@ -148,7 +149,7 @@ public class FullRobotControl extends LinearOpMode {
                     armEx.setPower(0.0); // Stop movement if out of range
                 } else {
                     armEx.setMode(DcMotor.RunMode.RUN_USING_ENCODER);
-                    armEx.setPower(armExPower * MAX_ARMEX_POWER);
+                    armEx.setPower(armExPower * MAX_ARM_POWER);
                     armExTargetPosition = armEx.getCurrentPosition();
                 }
             } else {
