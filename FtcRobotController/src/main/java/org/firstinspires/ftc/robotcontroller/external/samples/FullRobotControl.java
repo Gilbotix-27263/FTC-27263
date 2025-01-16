@@ -30,8 +30,13 @@ public class FullRobotControl extends LinearOpMode {
     private ElapsedTime zeroDelayTimer = new ElapsedTime(); // Timer for zeroing delay
 
     // Maximum power for arm motors
-    private static final double MAX_ARM_POWER = 0.4;
+    private static final double MAX_ARMUD_POWER = 0.4;
+    private static final double MAX_ARMEX_POWER = 1;
+
     private static final double ZERO_DELAY = 1.0; // Minimum delay in seconds between zeroing actions
+
+    // Arm state flag
+    private boolean armExZeroed = false;
 
     @Override
     public void runOpMode() throws InterruptedException {
@@ -75,14 +80,15 @@ public class FullRobotControl extends LinearOpMode {
 
         zeroDelayTimer.reset();
         while (!armExZeroSensor.isPressed() && !isStopRequested()) {
-            armEx.setPower(0.2); // Move the arm down slowly
+            armEx.setPower(-0.2); // Move the arm down slowly
         }
 
-        if (zeroDelayTimer.seconds() > ZERO_DELAY) {
+        if (!armExZeroed && armExZeroSensor.isPressed()) {
             armEx.setPower(0.0); // Stop the motor once zeroed
             armEx.setMode(DcMotor.RunMode.STOP_AND_RESET_ENCODER);
             armEx.setMode(DcMotor.RunMode.RUN_USING_ENCODER);
             zeroDelayTimer.reset(); // Reset the timer after zeroing
+            armExZeroed = true; // Set zeroed flag
         }
 
         telemetry.addData("Status", "ArmEx Zeroed");
@@ -101,12 +107,15 @@ public class FullRobotControl extends LinearOpMode {
 
         while (opModeIsActive()) {
 
-            // Reset armEx encoder whenever the zero sensor is pressed, with delay
-            if (armExZeroSensor.isPressed() && zeroDelayTimer.seconds() > ZERO_DELAY) {
+            // Reset armEx encoder whenever the zero sensor is pressed, with delay and flag check
+            if (armExZeroSensor.isPressed() && zeroDelayTimer.seconds() > ZERO_DELAY && !armExZeroed) {
+                armEx.setPower(0.0); // Ensure the motor stops immediately
                 armEx.setMode(DcMotor.RunMode.STOP_AND_RESET_ENCODER);
                 armEx.setMode(DcMotor.RunMode.RUN_USING_ENCODER);
-                armEx.setPower(0.0);
                 zeroDelayTimer.reset(); // Reset delay timer after resetting encoder
+                armExZeroed = true; // Prevent further movement
+            } else if (!armExZeroSensor.isPressed()) {
+                armExZeroed = false; // Reset the flag if the sensor is released
             }
 
             // Handle speed toggle based on gamepad input
@@ -133,7 +142,7 @@ public class FullRobotControl extends LinearOpMode {
             motor4.setPower(backRightPower);
 
             // Control the up/down movement of the arm using the left joystick (gamepad2)
-            double armUDPower = gamepad2.left_stick_y * MAX_ARM_POWER;
+            double armUDPower = gamepad2.left_stick_y * MAX_ARMUD_POWER;
             if (Math.abs(armUDPower) > 0.1) {
                 armUD.setMode(DcMotor.RunMode.RUN_USING_ENCODER);
                 armUD.setPower(armUDPower);
@@ -154,7 +163,7 @@ public class FullRobotControl extends LinearOpMode {
                     armEx.setPower(0.0); // Stop movement if out of range
                 } else {
                     armEx.setMode(DcMotor.RunMode.RUN_USING_ENCODER);
-                    armEx.setPower(armExPower * MAX_ARM_POWER);
+                    armEx.setPower(armExPower * MAX_ARMEX_POWER);
                     armExTargetPosition = armEx.getCurrentPosition();
                 }
             } else {
