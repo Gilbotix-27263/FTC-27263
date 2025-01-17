@@ -123,6 +123,12 @@ public class AutonomousMovement extends LinearOpMode {
 
         int direction = right ? 1 : -1;
 
+
+
+
+
+
+
         motor1.setTargetPosition(-encoderCounts * direction);
         motor2.setTargetPosition(-encoderCounts * direction);
         motor3.setTargetPosition(encoderCounts * direction);
