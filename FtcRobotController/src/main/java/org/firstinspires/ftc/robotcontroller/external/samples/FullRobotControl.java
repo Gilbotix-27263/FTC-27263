@@ -150,7 +150,7 @@ public class FullRobotControl extends LinearOpMode {
 
             if (Math.abs(armExPower) > 0.1) {
                 // Prevent movement beyond limits
-                if ((armExCurrentPosition <= -5500 && armExPower < 0) || (armExCurrentPosition >= 0 && armExPower > 0)) ||  (armExZeroSensor.isPressed()){
+                if ((armExCurrentPosition <= -5500 && armExPower < 0) || (armExCurrentPosition >= 0 && armExPower > 0) ||  armExZeroSensor.isPressed()){
                     armEx.setPower(0.0); // Stop movement if out of range
                 }
                 else {
