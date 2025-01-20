@@ -80,7 +80,7 @@ public class FullRobotControl extends LinearOpMode {
 
         zeroDelayTimer.reset();
         while (!armExZeroSensor.isPressed() && !isStopRequested()) {
-            armEx.setPower(-0.2); // Move the arm down slowly
+            armEx.setPower(0.2); // Move the arm down slowly
         }
 
         if (!armExZeroed && armExZeroSensor.isPressed()) {
