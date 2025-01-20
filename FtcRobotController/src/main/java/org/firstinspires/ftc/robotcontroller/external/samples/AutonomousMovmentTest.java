@@ -3,8 +3,11 @@ package org.firstinspires.ftc.robotcontroller.external.samples;
 import com.qualcomm.hardware.rev.RevHubOrientationOnRobot;
 import com.qualcomm.robotcore.eventloop.opmode.Autonomous;
 import com.qualcomm.robotcore.eventloop.opmode.LinearOpMode;
+import com.qualcomm.robotcore.hardware.CRServo;
 import com.qualcomm.robotcore.hardware.DcMotor;
 import com.qualcomm.robotcore.hardware.IMU;
+import com.qualcomm.robotcore.hardware.Servo;
+import com.qualcomm.robotcore.hardware.TouchSensor;
 import com.qualcomm.robotcore.util.Range;
 
 import org.firstinspires.ftc.robotcore.external.navigation.AngleUnit;
@@ -19,7 +22,14 @@ public class AutonomousMovmentTest extends LinearOpMode {
     private DcMotor motor3; // Back Left
     private DcMotor motor4; // Back Right
     private IMU imu;
+    private int UD_TICKS_PER_REV = 	1425;
+    // Declare arm and intake components
+    private DcMotor armUD, armEx;
+    private CRServo servoIntakeLeft, servoIntakeRight; // CRServos for intake mechanism
+    private Servo servoMovingIntake; // Servo for the moving intake component
 
+    // REV Touch Sensor to detect the zero position of the arm extension
+    private TouchSensor armExZeroSensor;
     private static final double TURN_SPEED = 0.3;
     private static final int COUNTS_PER_REV = 537; // Example: GoBILDA Yellow Jacket 312RPM
     private static final double WHEEL_DIAMETER = 4.0; // Wheel diameter in inches
@@ -34,6 +44,17 @@ public class AutonomousMovmentTest extends LinearOpMode {
         motor2 = hardwareMap.get(DcMotor.class, "motor2");
         motor3 = hardwareMap.get(DcMotor.class, "motor3");
         motor4 = hardwareMap.get(DcMotor.class, "motor4");
+        armUD = hardwareMap.get(DcMotor.class, "armUD");
+        armEx = hardwareMap.get(DcMotor.class, "arm");
+        servoIntakeLeft = hardwareMap.get(CRServo.class, "intakeLeft");
+        servoIntakeRight = hardwareMap.get(CRServo.class, "intakeRight");
+        servoMovingIntake = hardwareMap.get(Servo.class, "movingIntake");
+        armExZeroSensor = hardwareMap.get(TouchSensor.class, "armExZeroSensor");
+
+        armUD.setMode(DcMotor.RunMode.STOP_AND_RESET_ENCODER);
+        armUD.setMode(DcMotor.RunMode.RUN_USING_ENCODER);
+        armUD.setZeroPowerBehavior(DcMotor.ZeroPowerBehavior.BRAKE);
+
 
         motor1.setDirection(DcMotor.Direction.FORWARD);
         motor2.setDirection(DcMotor.Direction.REVERSE);
@@ -80,14 +101,21 @@ public class AutonomousMovmentTest extends LinearOpMode {
         motor4.setMode(DcMotor.RunMode.RUN_USING_ENCODER);
     }
     private void sequence(){
+        ArmUpDown(45);
 
-        Side(-5 * Tile);
-        resetEncoders();
-        Drive(4 * Tile);
-        resetEncoders();
-        spinToAngle(90);
-        resetEncoders();
-        Drive(5 * Tile);
+    }
+    private void ArmUpDown(int rotations){
+        armUD.setMode(DcMotor.RunMode.STOP_AND_RESET_ENCODER);
+        armUD.setTargetPosition(rotations * UD_TICKS_PER_REV);
+        armUD.setMode(DcMotor.RunMode.RUN_TO_POSITION);
+        armUD.setPower(1);
+
+
+        while (opModeIsActive() && (armUD.isBusy())){
+            telemetry.addData("Armud",armUD.getCurrentPosition());
+            telemetry.update();
+        }
+
 
     }
     private void Drive(int inch){
