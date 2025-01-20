@@ -53,7 +53,7 @@ public class AutonomousMovmentTest extends LinearOpMode {
 
         armUD.setMode(DcMotor.RunMode.STOP_AND_RESET_ENCODER);
         armUD.setMode(DcMotor.RunMode.RUN_USING_ENCODER);
-        armUD.setZeroPowerBehavior(DcMotor.ZeroPowerBehavior.BRAKE);
+
 
 
         motor1.setDirection(DcMotor.Direction.FORWARD);
@@ -100,18 +100,24 @@ public class AutonomousMovmentTest extends LinearOpMode {
         motor3.setMode(DcMotor.RunMode.RUN_USING_ENCODER);
         motor4.setMode(DcMotor.RunMode.RUN_USING_ENCODER);
     }
-    private void sequence(){
-        ArmUpDown(45);
+        private void sequence(){
+
+            ArmUpDown(2);
+
 
     }
     private void ArmUpDown(int rotations){
-        armUD.setMode(DcMotor.RunMode.STOP_AND_RESET_ENCODER);
-        armUD.setTargetPosition(rotations * UD_TICKS_PER_REV);
+
+        armUD.setTargetPosition(-rotations* UD_TICKS_PER_REV);
         armUD.setMode(DcMotor.RunMode.RUN_TO_POSITION);
         armUD.setPower(1);
 
 
         while (opModeIsActive() && (armUD.isBusy())){
+            if (armUD.getCurrentPosition()<=-1500){
+                armUD.setTargetPosition(armUD.getCurrentPosition());
+                armUD.setMode(DcMotor.RunMode.RUN_TO_POSITION);
+            }
             telemetry.addData("Armud",armUD.getCurrentPosition());
             telemetry.update();
         }
