@@ -12,10 +12,10 @@ import com.qualcomm.robotcore.util.Range;
 @TeleOp(group = "Main")
 public class FullRobotControl extends LinearOpMode {
 
-    // Declare drive motors
+    // Declare drive motors (Controller 1)
     private DcMotor motor1, motor2, motor3, motor4;
 
-    // Declare arm and intake components
+    // Declare arm and intake components (Controller 2)
     private DcMotor armUD, armEx;
     private CRServo servoIntakeLeft, servoIntakeRight; // CRServos for intake mechanism
     private Servo servoMovingIntake; // Servo for the moving intake component
@@ -107,25 +107,13 @@ public class FullRobotControl extends LinearOpMode {
 
         while (opModeIsActive()) {
 
-            // Reset armEx encoder whenever the zero sensor is pressed, with delay and flag check
-            if (armExZeroSensor.isPressed() && zeroDelayTimer.seconds() > ZERO_DELAY && !armExZeroed) {
-                armEx.setPower(0.0); // Ensure the motor stops immediately
-                armEx.setMode(DcMotor.RunMode.STOP_AND_RESET_ENCODER);
-                armEx.setMode(DcMotor.RunMode.RUN_USING_ENCODER);
-                zeroDelayTimer.reset(); // Reset delay timer after resetting encoder
-                armExZeroed = true; // Prevent further movement
-            } else if (!armExZeroSensor.isPressed()) {
-                armExZeroed = false; // Reset the flag if the sensor is released
-            }
-
-            // Handle speed toggle based on gamepad input
+            // Driving controls (Controller 1)
             if (gamepad1.left_bumper && toggleTimer.seconds() > 0.5) {
                 isSlowMode = !isSlowMode;
                 speedMultiplier = isSlowMode ? 0.3 : 1.0; // Toggle speed multiplier
                 toggleTimer.reset();
             }
 
-            // Calculate driving power for all wheels based on joystick input
             double drive = gamepad1.left_stick_y * speedMultiplier;
             double turn = -gamepad1.right_stick_x * speedMultiplier;
             double strafe = -gamepad1.left_stick_x * speedMultiplier;
@@ -141,38 +129,61 @@ public class FullRobotControl extends LinearOpMode {
             motor3.setPower(backLeftPower);
             motor4.setPower(backRightPower);
 
-            // Control the up/down movement of the arm using the left joystick (gamepad2)
-            double armUDPower = gamepad2.left_stick_y * MAX_ARMUD_POWER;
-            if (Math.abs(armUDPower) > 0.1) {
-                armUD.setMode(DcMotor.RunMode.RUN_USING_ENCODER);
-                armUD.setPower(armUDPower);
-                armUDTargetPosition = armUD.getCurrentPosition();
-            } else {
-                armUD.setTargetPosition(armUDTargetPosition);
-                armUD.setMode(DcMotor.RunMode.RUN_TO_POSITION);
-                armUD.setPower(0.5); // Holding power
+            // Arm and intake controls (Controller 2)
+
+            // Reset armEx encoder whenever the zero sensor is pressed, with delay and flag check
+            if (armExZeroSensor.isPressed() && zeroDelayTimer.seconds() > ZERO_DELAY && !armExZeroed) {
+                armEx.setPower(0.0); // Ensure the motor stops immediately
+                armEx.setMode(DcMotor.RunMode.STOP_AND_RESET_ENCODER);
+                armEx.setMode(DcMotor.RunMode.RUN_USING_ENCODER);
+                zeroDelayTimer.reset(); // Reset delay timer after resetting encoder
+                armExZeroed = true; // Prevent further movement
+            } else if (!armExZeroSensor.isPressed()) {
+                armExZeroed = false; // Reset the flag if the sensor is released
             }
 
-            // Control the arm extension using triggers (gamepad2)
-            double armExPower = gamepad2.right_trigger - gamepad2.left_trigger;
-            int armExCurrentPosition = armEx.getCurrentPosition();
+            // Prevent moving the armEx further back after it is zeroed
+            if (armExZeroed && gamepad2.left_trigger > 0.1) {
+                armEx.setPower(0.0); // Block backward movement
+            } else {
+                // Control the arm extension using triggers (gamepad2)
+                double armExPower = gamepad2.right_trigger - gamepad2.left_trigger;
+                int armExCurrentPosition = armEx.getCurrentPosition();
 
-            if (Math.abs(armExPower) > 0.1) {
-                // Prevent movement beyond limits
-                if ((armExCurrentPosition <= -5500 && armExPower < 0) || (armExCurrentPosition >= 0 && armExPower > 0)) {
-                    armEx.setPower(0.0); // Stop movement if out of range
+                if (Math.abs(armExPower) > 0.1) {
+                    // Prevent movement beyond limits
+                    if ((armExCurrentPosition <= -5500 && armExPower < 0) || (armExCurrentPosition >= 0 && armExPower > 0)) {
+                        armEx.setPower(0.0); // Stop movement if out of range
+                    } else {
+                        armEx.setMode(DcMotor.RunMode.RUN_USING_ENCODER);
+                        armEx.setPower(armExPower * MAX_ARMEX_POWER);
+                        armExTargetPosition = armEx.getCurrentPosition();
+                    }
                 } else {
-                    armEx.setMode(DcMotor.RunMode.RUN_USING_ENCODER);
-                    armEx.setPower(armExPower * MAX_ARMEX_POWER);
-                    armExTargetPosition = armEx.getCurrentPosition();
+                    armEx.setTargetPosition(armExTargetPosition);
+                    armEx.setMode(DcMotor.RunMode.RUN_TO_POSITION);
+                    armEx.setPower(0.5); // Holding power
                 }
-            } else {
-                armEx.setTargetPosition(armExTargetPosition);
-                armEx.setMode(DcMotor.RunMode.RUN_TO_POSITION);
-                armEx.setPower(0.5); // Holding power
             }
 
-            // Control the intake mechanism using buttons (gamepad2)
+            // Prevent moving armUD beyond 2000 encoder counts
+            int armUDCurrentPosition = armUD.getCurrentPosition();
+            if (armUDCurrentPosition >= 2000 && gamepad2.left_stick_y < 0) {
+                armUD.setPower(0.0); // Block upward movement beyond 2000
+            } else {
+                double armUDPower = gamepad2.left_stick_y * MAX_ARMUD_POWER;
+                if (Math.abs(armUDPower) > 0.1) {
+                    armUD.setMode(DcMotor.RunMode.RUN_USING_ENCODER);
+                    armUD.setPower(armUDPower);
+                    armUDTargetPosition = armUD.getCurrentPosition();
+                } else {
+                    armUD.setTargetPosition(armUDTargetPosition);
+                    armUD.setMode(DcMotor.RunMode.RUN_TO_POSITION);
+                    armUD.setPower(0.5); // Holding power
+                }
+            }
+
+            // Intake mechanism controls (gamepad2)
             if (gamepad2.a) {
                 servoIntakeLeft.setPower(1.0); // Intake forward
                 servoIntakeRight.setPower(-1.0); // Opposite direction
@@ -184,7 +195,7 @@ public class FullRobotControl extends LinearOpMode {
                 servoIntakeRight.setPower(0.0);
             }
 
-            // Control the moving intake servo using bumpers (gamepad2)
+            // Moving intake servo controls (gamepad2)
             double movingIntakePosition = gamepad2.left_bumper ? 0.1333 : (gamepad2.right_bumper ? 0.8333 : 0.5);
             servoMovingIntake.setPosition(Range.clip(movingIntakePosition, 0.0, 1.0));
 
