@@ -55,13 +55,15 @@ public class AutonomousTest extends LinearOpMode {
 
         telemetry.addData("Status", "Sequence Complete");
         telemetry.update();
-        while (opModeIsActive()){
-            Drive(5);
-        }
+
+
+
     }
 
 
     private void Drive(int inch){
+
+
         motor1.setTargetPosition(-((int) COUNTS_PER_INCH * inch) );
         motor2.setTargetPosition(((int) COUNTS_PER_INCH * inch));
         motor3.setTargetPosition(((int) COUNTS_PER_INCH * inch));
@@ -71,15 +73,49 @@ public class AutonomousTest extends LinearOpMode {
         motor2.setMode(DcMotor.RunMode.RUN_TO_POSITION);
         motor3.setMode(DcMotor.RunMode.RUN_TO_POSITION);
         motor4.setMode(DcMotor.RunMode.RUN_TO_POSITION);
+
+        motor1.setPower(1);
+        motor2.setPower(1);
+        motor3.setPower(1);
+        motor4.setPower(1);
+
+
     }
 
+    private void Side(int inch){
+        motor1.setTargetPosition(-((int) COUNTS_PER_INCH * inch) );
+        motor2.setTargetPosition(-((int) COUNTS_PER_INCH * inch));
+        motor3.setTargetPosition(((int) COUNTS_PER_INCH * inch));
+        motor4.setTargetPosition(((int) COUNTS_PER_INCH * inch));
+
+        motor1.setMode(DcMotor.RunMode.RUN_TO_POSITION);
+        motor2.setMode(DcMotor.RunMode.RUN_TO_POSITION);
+        motor3.setMode(DcMotor.RunMode.RUN_TO_POSITION);
+        motor4.setMode(DcMotor.RunMode.RUN_TO_POSITION);
+
+        motor1.setPower(1);
+        motor2.setPower(1);
+        motor3.setPower(1);
+        motor4.setPower(1);
+    }
+
+    private boolean Wait(){
+        while (true){
+            if ((motor1.getPower() == 0) && (motor2.getPower() ==0 ) && (motor3.getPower() ==0) && (motor4.getPower() ==0))  {
+                return true;
+
+            }
+        }
+    }
     private void stopMotors() {
         motor1.setPower(0);
         motor2.setPower(0);
         motor3.setPower(0);
         motor4.setPower(0);
     }
-
+    private boolean motorsAreBusy() {
+        return motor1.isBusy() && motor2.isBusy() && motor3.isBusy() && motor4.isBusy();
+    }
     private double normalizeAngle(double angle) {
         while (angle > 180) angle -= 360;
         while (angle < -180) angle += 360;
