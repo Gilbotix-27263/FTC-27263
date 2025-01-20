@@ -33,6 +33,7 @@ public class FullRobotControl extends LinearOpMode {
     private static final double MAX_ARMUD_POWER = 0.4;
     private static final double MAX_ARMEX_POWER = 1;
 
+    private static final int ARMUD_MAX_POSITION = 2100;
     private static final double ZERO_DELAY = 1.0; // Minimum delay in seconds between zeroing actions
 
     // Arm state flag
@@ -168,18 +169,15 @@ public class FullRobotControl extends LinearOpMode {
 
             // Prevent moving armUD beyond 2000 encoder counts
             int armUDCurrentPosition = armUD.getCurrentPosition();
-            if (armUDCurrentPosition >= 2000 && gamepad2.left_stick_y < 0) {
-                armUD.setPower(0.0); // Block upward movement beyond 2000
+            if (armUDCurrentPosition >= ARMUD_MAX_POSITION && gamepad2.left_stick_y < 0) {
+                armUD.setPower(0.0); // Block upward movement beyond 2100
             } else {
                 double armUDPower = gamepad2.left_stick_y * MAX_ARMUD_POWER;
                 if (Math.abs(armUDPower) > 0.1) {
                     armUD.setMode(DcMotor.RunMode.RUN_USING_ENCODER);
                     armUD.setPower(armUDPower);
-                    armUDTargetPosition = armUD.getCurrentPosition();
                 } else {
-                    armUD.setTargetPosition(armUDTargetPosition);
-                    armUD.setMode(DcMotor.RunMode.RUN_TO_POSITION);
-                    armUD.setPower(0.5); // Holding power
+                    armUD.setPower(0.0);
                 }
             }
 
