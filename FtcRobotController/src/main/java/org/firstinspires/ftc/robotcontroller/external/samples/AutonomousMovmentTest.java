@@ -8,6 +8,7 @@ import com.qualcomm.robotcore.hardware.DcMotor;
 import com.qualcomm.robotcore.hardware.IMU;
 import com.qualcomm.robotcore.hardware.Servo;
 import com.qualcomm.robotcore.hardware.TouchSensor;
+import com.qualcomm.robotcore.hardware.usb.RobotUsbDevice;
 import com.qualcomm.robotcore.util.Range;
 
 import org.firstinspires.ftc.robotcore.external.navigation.AngleUnit;
@@ -23,6 +24,10 @@ public class AutonomousMovmentTest extends LinearOpMode {
     private DcMotor motor4; // Back Right
     private IMU imu;
     private int UD_TICKS_PER_REV = 	1425;
+
+    private int EX_TICKS_PER_REV = 	540;
+    private int EX_FULL = 58 * (EX_TICKS_PER_REV/10);
+    private int EX_TICKS_PER_INCH = EX_TICKS_PER_REV * (1/8);
     // Declare arm and intake components
     private DcMotor armUD, armEx;
     private CRServo servoIntakeLeft, servoIntakeRight; // CRServos for intake mechanism
@@ -54,6 +59,9 @@ public class AutonomousMovmentTest extends LinearOpMode {
         armUD.setMode(DcMotor.RunMode.STOP_AND_RESET_ENCODER);
         armUD.setMode(DcMotor.RunMode.RUN_USING_ENCODER);
 
+        armEx.setMode(DcMotor.RunMode.STOP_AND_RESET_ENCODER);
+        armEx.setMode(DcMotor.RunMode.RUN_USING_ENCODER);
+
 
 
         motor1.setDirection(DcMotor.Direction.FORWARD);
@@ -82,12 +90,22 @@ public class AutonomousMovmentTest extends LinearOpMode {
         telemetry.addData("Status", "Sequence Complete");
         telemetry.update();
 
-        while(opModeIsActive()){
+        if (waitforopmode() == true){
             sequence();
-
         }
 
 
+    }
+
+    private boolean waitforopmode(){
+        while (true){
+            if (opModeIsActive()){
+                return  true;
+            }
+            else{
+                continue;
+            }
+        }
     }
     private void resetEncoders() {
         motor1.setMode(DcMotor.RunMode.STOP_AND_RESET_ENCODER);
@@ -102,7 +120,19 @@ public class AutonomousMovmentTest extends LinearOpMode {
     }
         private void sequence(){
 
-            ArmUpDown(2);
+
+
+            Drive(10);
+            resetEncoders();
+            Side(8);
+            resetEncoders();
+            Drive(32);
+            resetEncoders();
+            spinToAngle(90);
+            resetEncoders();
+            Drive(12);
+            resetEncoders();
+            Side(-40);
 
 
     }
@@ -113,10 +143,9 @@ public class AutonomousMovmentTest extends LinearOpMode {
         armUD.setPower(1);
 
 
-        while (opModeIsActive() && (armUD.isBusy())){
-            if (armUD.getCurrentPosition()<=-1500){
-                armUD.setTargetPosition(armUD.getCurrentPosition());
-                armUD.setMode(DcMotor.RunMode.RUN_TO_POSITION);
+        while (opModeIsActive()){
+                if (armUD.getCurrentPosition()>1500){
+                    armUD.setTargetPosition(1500);
             }
             telemetry.addData("Armud",armUD.getCurrentPosition());
             telemetry.update();
@@ -124,6 +153,35 @@ public class AutonomousMovmentTest extends LinearOpMode {
 
 
     }
+    private void ArmExtention(int Inch){
+        armEx.setTargetPosition(-Inch * EX_TICKS_PER_INCH);
+        armEx.setMode(DcMotor.RunMode.RUN_TO_POSITION);
+        armEx.setPower(1);
+
+        while (opModeIsActive()){
+            if (armExZeroSensor.isPressed()) {
+                armEx.setMode(DcMotor.RunMode.STOP_AND_RESET_ENCODER);
+                armEx.setMode(DcMotor.RunMode.RUN_USING_ENCODER);
+            }
+            if (armEx.getCurrentPosition() > (58 * (EX_TICKS_PER_REV/10))){
+                armEx.setTargetPosition(58*(EX_TICKS_PER_REV/10));
+            }
+            if (armEx.getCurrentPosition()<0){
+                armEx.setTargetPosition(0);
+            }
+        }
+
+    }
+    private void ServoIntakes(boolean In){
+
+        int inout = In ? 1:-1;
+
+        servoIntakeRight.setPower(inout);
+        servoIntakeLeft.setPower(-inout);
+
+
+    }
+
     private void Drive(int inch){
         resetEncoders();
 
