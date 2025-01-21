@@ -100,7 +100,6 @@ public class FullRobotControl extends LinearOpMode {
         telemetry.update();
 
         // Track the target positions for armUD and armEx
-        int armUDTargetPosition = armUD.getCurrentPosition();
         int armExTargetPosition = armEx.getCurrentPosition();
 
         // Wait for the start signal
@@ -172,11 +171,12 @@ public class FullRobotControl extends LinearOpMode {
 
             if (Math.abs(armUDPower) > 0.1) {
                 // Prevent movement beyond limits
-                if ((armUDCurrentPosition >= ARMUD_MAX_POSITION && armUDPower < 0) || (armUDCurrentPosition <= 0 && armUDPower > 0)) {
+                if ((armUDCurrentPosition <= ARMUD_MAX_POSITION && armUDPower < 0) || (armUDCurrentPosition >= 0 && armUDPower > 0)) {
                     armUD.setPower(0.0); // Stop movement if out of range
                 } else {
                     armUD.setMode(DcMotor.RunMode.RUN_USING_ENCODER);
                     armUD.setPower(armUDPower);
+                    armUD.setTargetPosition(armUDCurrentPosition);
                 }
             } else {
                 armUD.setTargetPosition(armUDCurrentPosition);
