@@ -144,6 +144,7 @@ public class FullRobotControl extends LinearOpMode {
 
 // Prevent moving the armEx further back after it is zeroed
             if (armExZeroed && gamepad2.left_trigger > 0.1) {
+                armEx.setPower(0.0); // Block backward movement
             } else {
                 // Control the arm extension using triggers (gamepad2)
                 double armExPower = 0;
