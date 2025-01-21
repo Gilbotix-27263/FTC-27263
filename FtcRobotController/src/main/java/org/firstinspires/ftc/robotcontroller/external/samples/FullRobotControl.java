@@ -33,7 +33,6 @@ public class FullRobotControl extends LinearOpMode {
     private static final double MAX_ARMUD_POWER = 0.4;
     private static final double MAX_ARMEX_POWER = 1;
 
-    private static final int ARMUD_MAX_POSITION = -2100;
     private static final double ZERO_DELAY = 1.0; // Minimum delay in seconds between zeroing actions
 
     // Arm state flag
@@ -158,7 +157,7 @@ public class FullRobotControl extends LinearOpMode {
                     } else {
                         armEx.setMode(DcMotor.RunMode.RUN_USING_ENCODER);
                         armEx.setPower(armExPower * MAX_ARMEX_POWER);
-                        armUDTargetPosition = armUD.getCurrentPosition();
+                        armExTargetPosition = armEx.getCurrentPosition();
                     }
                 } else {
                     armEx.setTargetPosition(armExTargetPosition);
@@ -171,18 +170,17 @@ public class FullRobotControl extends LinearOpMode {
             int armUDCurrentPosition = armUD.getCurrentPosition();
 
             if (Math.abs(armUDPower) > 0.1) {
-                // Prevent movement beyond limits
                 if ((armUDCurrentPosition <= -2100 && armUDPower < 0) || (armUDCurrentPosition >= 0 && armUDPower > 0)) {
-                    armUD.setPower(0.0); // Stop movement if out of range
+                    armUD.setPower(0.0);
                 } else {
                     armUD.setMode(DcMotor.RunMode.RUN_USING_ENCODER);
                     armUD.setPower(armUDPower);
                     armUDTargetPosition = armUD.getCurrentPosition();
                 }
             } else {
-                armUD.setTargetPosition(armUDCurrentPosition);
+                armUD.setTargetPosition(armUDTargetPosition);
                 armUD.setMode(DcMotor.RunMode.RUN_TO_POSITION);
-                armUD.setPower(0.5); // Holding power
+                armUD.setPower(0.5);
             }
 
             // Intake mechanism controls (gamepad2)
