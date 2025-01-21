@@ -167,18 +167,21 @@ public class FullRobotControl extends LinearOpMode {
                 }
             }
 
-            // Prevent moving armUD beyond 2000 encoder counts
+            double armUDPower = gamepad2.left_stick_y * MAX_ARMUD_POWER;
             int armUDCurrentPosition = armUD.getCurrentPosition();
-            if (armUDCurrentPosition >= ARMUD_MAX_POSITION && gamepad2.left_stick_y < 0) {
-                armUD.setPower(0.0);// Block upward movement beyond 2100
-            } else {
-                double armUDPower = gamepad2.left_stick_y * MAX_ARMUD_POWER;
-                if (Math.abs(armUDPower) > 0.1) {
+
+            if (Math.abs(armUDPower) > 0.1) {
+                // Prevent movement beyond limits
+                if ((armUDCurrentPosition >= ARMUD_MAX_POSITION && armUDPower < 0) || (armUDCurrentPosition <= 0 && armUDPower > 0)) {
+                    armUD.setPower(0.0); // Stop movement if out of range
+                } else {
                     armUD.setMode(DcMotor.RunMode.RUN_USING_ENCODER);
                     armUD.setPower(armUDPower);
-                } else {
-                    armUD.setPower(0.0);
                 }
+            } else {
+                armUD.setTargetPosition(armUDCurrentPosition);
+                armUD.setMode(DcMotor.RunMode.RUN_TO_POSITION);
+                armUD.setPower(0.5); // Holding power
             }
 
             // Intake mechanism controls (gamepad2)
