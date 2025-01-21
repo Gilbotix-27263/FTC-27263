@@ -146,78 +146,85 @@ public class FullRobotControl extends LinearOpMode {
             if (armExZeroed && gamepad2.left_trigger > 0.1) {
                 armEx.setPower(0.0); // Block backward movement
             } else {
-                // Control the arm extension using triggers (gamepad2)
-                double armExPower = 0;
+                if (armExZeroed && gamepad2.left_trigger > 0.1) {
+                    armEx.setPower(0.0); // Block backward movement
+                } else {
+                    // Control the arm extension using triggers (gamepad2)
+                    double armExPower = 0;
 
-                // If the zero button is pressed, disable the right trigger
-                if (!armExZeroSensor.isPressed()) {
-                    armExPower = gamepad2.right_trigger - gamepad2.left_trigger;
+                    // If the zero button is pressed, disable the right trigger
+                    if (!armExZeroSensor.isPressed()) {
+                        // Ensure no movement when in restricted range and RT is pressed
+                        int armExCurrentPosition = armEx.getCurrentPosition();
+                        if (armExCurrentPosition > -12 && armExCurrentPosition <= 0 && gamepad2.right_trigger > 0.1) {
+                            armExPower = 0;  // Ignore RT input within restricted range
+                        } else {
+                            armExPower = gamepad2.right_trigger - gamepad2.left_trigger;
+                        }
+
+                        if (Math.abs(armExPower) > 0.1) {
+                            // Prevent movement beyond limits
+                            if ((armExCurrentPosition <= -2150 && armExPower < 0) ||
+                                    (armExCurrentPosition >= -10 && armExPower > 0)) {
+                                armEx.setPower(0.0); // Stop movement if out of range
+                            } else {
+                                armEx.setMode(DcMotor.RunMode.RUN_USING_ENCODER);
+                                armEx.setPower(armExPower * MAX_ARMEX_POWER);
+                                armExTargetPosition = armEx.getCurrentPosition();
+                            }
+                        } else {
+                            armEx.setTargetPosition(armExTargetPosition);
+                            armEx.setMode(DcMotor.RunMode.RUN_TO_POSITION);
+                            armEx.setPower(0.5); // Holding power
+                        }
+                    }
                 }
 
-                int armExCurrentPosition = armEx.getCurrentPosition();
+                double armUDPower = gamepad2.left_stick_y * MAX_ARMUD_POWER;
+                int armUDCurrentPosition = armUD.getCurrentPosition();
 
-                if (Math.abs(armExPower) > 0.1) {
-                    // Prevent movement beyond limits, including the special case of -12 to 0 range
-                    if ((armExCurrentPosition <= -2150 && armExPower < 0) ||
-                            (armExCurrentPosition >= -10 && armExPower > 0) ||
-                            (armExCurrentPosition >= -12 && armExCurrentPosition <= 0 && armExPower > 0)) {
-                        armEx.setPower(0.0); // Stop movement if out of range or within the restricted range
+                if (Math.abs(armUDPower) > 0.1) {
+                    if ((armUDCurrentPosition <= -2100 && armUDPower < 0) || (armUDCurrentPosition >= 0 && armUDPower > 0)) {
+                        armUD.setPower(0.0);
                     } else {
-                        armEx.setMode(DcMotor.RunMode.RUN_USING_ENCODER);
-                        armEx.setPower(armExPower * MAX_ARMEX_POWER);
-                        armExTargetPosition = armEx.getCurrentPosition();
+                        armUD.setMode(DcMotor.RunMode.RUN_USING_ENCODER);
+                        armUD.setPower(armUDPower);
+                        armUDTargetPosition = armUD.getCurrentPosition();
                     }
                 } else {
-                    armEx.setTargetPosition(armExTargetPosition);
-                    armEx.setMode(DcMotor.RunMode.RUN_TO_POSITION);
-                    armEx.setPower(0.5); // Holding power
+                    armUD.setTargetPosition(armUDTargetPosition);
+                    armUD.setMode(DcMotor.RunMode.RUN_TO_POSITION);
+                    armUD.setPower(0.5);
                 }
-            }
 
-            double armUDPower = gamepad2.left_stick_y * MAX_ARMUD_POWER;
-            int armUDCurrentPosition = armUD.getCurrentPosition();
-
-            if (Math.abs(armUDPower) > 0.1) {
-                if ((armUDCurrentPosition <= -2100 && armUDPower < 0) || (armUDCurrentPosition >= 0 && armUDPower > 0)) {
-                    armUD.setPower(0.0);
+                // Intake mechanism controls (gamepad2)
+                if (gamepad2.a) {
+                    servoIntakeLeft.setPower(1.0); // Intake forward
+                    servoIntakeRight.setPower(-1.0); // Opposite direction
+                } else if (gamepad2.b) {
+                    servoIntakeLeft.setPower(-1.0); // Intake backward
+                    servoIntakeRight.setPower(1.0); // Opposite direction
                 } else {
-                    armUD.setMode(DcMotor.RunMode.RUN_USING_ENCODER);
-                    armUD.setPower(armUDPower);
-                    armUDTargetPosition = armUD.getCurrentPosition();
+                    servoIntakeLeft.setPower(0.0); // Stop intake
+                    servoIntakeRight.setPower(0.0);
                 }
-            } else {
-                armUD.setTargetPosition(armUDTargetPosition);
-                armUD.setMode(DcMotor.RunMode.RUN_TO_POSITION);
-                armUD.setPower(0.5);
+
+                // Moving intake servo controls (gamepad2)
+                double movingIntakePosition = gamepad2.left_bumper ? 0.1333 : (gamepad2.right_bumper ? 0.8333 : 0.5);
+                servoMovingIntake.setPosition(Range.clip(movingIntakePosition, 0.0, 1.0));
+
+                // Display telemetry data for debugging
+                telemetry.addData("Speed Mode", isSlowMode ? "Slow" : "Fast");
+                telemetry.addData("Drive Motors", "FL: %.2f, FR: %.2f, BL: %.2f, BR: %.2f",
+                        frontLeftPower, frontRightPower, backLeftPower, backRightPower);
+                telemetry.addData("ArmUD Motor", "Power: %.2f, Position: %d", armUD.getPower(), armUD.getCurrentPosition());
+                telemetry.addData("ArmEx Motor", "Power: %.2f, Position: %d", armEx.getPower(), armEx.getCurrentPosition());
+                telemetry.addData("Intake Left CRServo", "Power: %.2f", servoIntakeLeft.getPower());
+                telemetry.addData("Intake Right CRServo", "Power: %.2f", servoIntakeRight.getPower());
+                telemetry.addData("Moving Intake Servo", "Position: %.2f", servoMovingIntake.getPosition());
+                telemetry.addData("ArmEx Zero Sensor", "Pressed: %b", armExZeroSensor.isPressed());
+                telemetry.update();
             }
-
-            // Intake mechanism controls (gamepad2)
-            if (gamepad2.a) {
-                servoIntakeLeft.setPower(1.0); // Intake forward
-                servoIntakeRight.setPower(-1.0); // Opposite direction
-            } else if (gamepad2.b) {
-                servoIntakeLeft.setPower(-1.0); // Intake backward
-                servoIntakeRight.setPower(1.0); // Opposite direction
-            } else {
-                servoIntakeLeft.setPower(0.0); // Stop intake
-                servoIntakeRight.setPower(0.0);
-            }
-
-            // Moving intake servo controls (gamepad2)
-            double movingIntakePosition = gamepad2.left_bumper ? 0.1333 : (gamepad2.right_bumper ? 0.8333 : 0.5);
-            servoMovingIntake.setPosition(Range.clip(movingIntakePosition, 0.0, 1.0));
-
-            // Display telemetry data for debugging
-            telemetry.addData("Speed Mode", isSlowMode ? "Slow" : "Fast");
-            telemetry.addData("Drive Motors", "FL: %.2f, FR: %.2f, BL: %.2f, BR: %.2f",
-                    frontLeftPower, frontRightPower, backLeftPower, backRightPower);
-            telemetry.addData("ArmUD Motor", "Power: %.2f, Position: %d", armUD.getPower(), armUD.getCurrentPosition());
-            telemetry.addData("ArmEx Motor", "Power: %.2f, Position: %d", armEx.getPower(), armEx.getCurrentPosition());
-            telemetry.addData("Intake Left CRServo", "Power: %.2f", servoIntakeLeft.getPower());
-            telemetry.addData("Intake Right CRServo", "Power: %.2f", servoIntakeRight.getPower());
-            telemetry.addData("Moving Intake Servo", "Position: %.2f", servoMovingIntake.getPosition());
-            telemetry.addData("ArmEx Zero Sensor", "Pressed: %b", armExZeroSensor.isPressed());
-            telemetry.update();
         }
     }
 }
