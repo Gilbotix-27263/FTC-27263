@@ -156,7 +156,7 @@ public class FullRobotControl extends LinearOpMode {
                 int armExCurrentPosition = armEx.getCurrentPosition();
 
                 // Prevent movement when arm is within the range -12 to 0
-                if (armExCurrentPosition >= -40 && armExCurrentPosition <= -20 && gamepad2.right_trigger > 0.1) {
+                if (armExCurrentPosition >= -50 && gamepad2.right_trigger > 0.1) {
                     armEx.setPower(0.0); // Ignore RT input within restricted range
                 }
                 // Prevent backward movement beyond the lower limit of -2150
