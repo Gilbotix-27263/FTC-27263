@@ -142,45 +142,42 @@ public class FullRobotControl extends LinearOpMode {
                 armExZeroed = false; // Reset the flag if the sensor is released
             }
 
-            // Prevent moving the armEx further back after it is zeroed
             if (armExZeroed && gamepad2.left_trigger > 0.1) {
                 armEx.setPower(0.0); // Block backward movement
             } else {
-                if (armExZeroed && gamepad2.left_trigger > 0.1) {
-                    armEx.setPower(0.0); // Block backward movement
-                } else {
-                    // Control the arm extension using triggers (gamepad2)
-                    double armExPower = 0;
+                // Control the arm extension using triggers (gamepad2)
+                double armExPower = 0;
 
-                    // If the zero button is pressed, disable the right trigger
-                    if (!armExZeroSensor.isPressed()) {
-                        // Ensure no movement when in restricted range and RT is pressed
-                        int armExCurrentPosition = armEx.getCurrentPosition();
-                        if (armExCurrentPosition > -12 && armExCurrentPosition <= 0 && gamepad2.right_trigger > 0.1) {
-                            armExPower = 0;  // Ignore RT input within restricted range
-                        } else {
-                            armExPower = gamepad2.right_trigger - gamepad2.left_trigger;
-                        }
-
-                        if (Math.abs(armExPower) > 0.1) {
-                            // Prevent movement beyond limits
-                            if ((armExCurrentPosition <= -2150 && armExPower < 0) ||
-                                    (armExCurrentPosition >= -10 && armExPower > 0)) {
-                                armEx.setPower(0.0); // Stop movement if out of range
-                            } else {
-                                armEx.setMode(DcMotor.RunMode.RUN_USING_ENCODER);
-                                armEx.setPower(armExPower * MAX_ARMEX_POWER);
-                                armExTargetPosition = armEx.getCurrentPosition();
-                            }
-                        } else {
-                            armEx.setTargetPosition(armExTargetPosition);
-                            armEx.setMode(DcMotor.RunMode.RUN_TO_POSITION);
-                            armEx.setPower(0.5); // Holding power
-                        }
-                    }
+                // If the zero button is pressed, disable the right trigger
+                if (!armExZeroSensor.isPressed()) {
+                    armExPower = gamepad2.right_trigger - gamepad2.left_trigger;
                 }
 
-                double armUDPower = gamepad2.left_stick_y * MAX_ARMUD_POWER;
+                int armExCurrentPosition = armEx.getCurrentPosition();
+
+                // Prevent movement when arm is within the range -12 to 0
+                if (armExCurrentPosition >= -12 && armExCurrentPosition <= 0 && gamepad2.right_trigger > 0.1) {
+                    armEx.setPower(0.0); // Ignore RT input within restricted range
+                }
+                // Prevent backward movement beyond the lower limit of -2150
+                else if (armExCurrentPosition <= -2150 && armExPower < 0) {
+                    armEx.setPower(0.0); // Stop backward movement if beyond limit
+                }
+                // Allow movement within valid range
+                else if (Math.abs(armExPower) > 0.1) {
+                    armEx.setMode(DcMotor.RunMode.RUN_USING_ENCODER);
+                    armEx.setPower(armExPower * MAX_ARMEX_POWER);
+                    armExTargetPosition = armEx.getCurrentPosition();
+                }
+                // Hold position when no movement input is detected
+                else {
+                    armEx.setTargetPosition(armExTargetPosition);
+                    armEx.setMode(DcMotor.RunMode.RUN_TO_POSITION);
+                    armEx.setPower(0.5); // Holding power
+                }
+            }
+
+            double armUDPower = gamepad2.left_stick_y * MAX_ARMUD_POWER;
                 int armUDCurrentPosition = armUD.getCurrentPosition();
 
                 if (Math.abs(armUDPower) > 0.1) {
@@ -227,4 +224,3 @@ public class FullRobotControl extends LinearOpMode {
             }
         }
     }
-}
