@@ -8,20 +8,18 @@ import com.qualcomm.robotcore.hardware.DcMotor;
 import com.qualcomm.robotcore.hardware.IMU;
 import com.qualcomm.robotcore.hardware.Servo;
 import com.qualcomm.robotcore.hardware.TouchSensor;
-import com.qualcomm.robotcore.hardware.usb.RobotUsbDevice;
 import com.qualcomm.robotcore.util.Range;
 
 import org.firstinspires.ftc.robotcore.external.navigation.AngleUnit;
 import org.firstinspires.ftc.robotcore.external.navigation.YawPitchRollAngles;
 
 @Autonomous(group = "Main")
-public class AutonomousMovmentTest extends LinearOpMode {
+public class AutonomousMovmentTestShasi extends LinearOpMode {
 
     private int Tile= 24;
     private DcMotor motor1; // Front Left
-    private DcMotor motor2; // Front Right
     private DcMotor motor3; // Back Left
-    private DcMotor motor4; // Back Right
+
     private IMU imu;
     private int UD_TICKS_PER_REV = 	1425;
 
@@ -29,11 +27,12 @@ public class AutonomousMovmentTest extends LinearOpMode {
     private int EX_FULL = 58 * (EX_TICKS_PER_REV/10);
     private int EX_TICKS_PER_INCH = EX_TICKS_PER_REV * (1/8);
     // Declare arm and intake components
-    private DcMotor armUD;
+    private DcMotor armUD, armEx;
     private CRServo servoIntakeLeft, servoIntakeRight; // CRServos for intake mechanism
     private Servo servoMovingIntake; // Servo for the moving intake component
 
     // REV Touch Sensor to detect the zero position of the arm extension
+    private TouchSensor armExZeroSensor;
     private static final double TURN_SPEED = 0.3;
     private static final int COUNTS_PER_REV = 537; // Example: GoBILDA Yellow Jacket 312RPM
     private static final double WHEEL_DIAMETER = 4.0; // Wheel diameter in inches
@@ -45,25 +44,15 @@ public class AutonomousMovmentTest extends LinearOpMode {
     public void runOpMode() {
         // Initialize motors
         motor1 = hardwareMap.get(DcMotor.class, "motor1");
-        motor2 = hardwareMap.get(DcMotor.class, "motor2");
         motor3 = hardwareMap.get(DcMotor.class, "motor3");
-        motor4 = hardwareMap.get(DcMotor.class, "motor4");
-        armUD = hardwareMap.get(DcMotor.class, "armUD");
-        servoIntakeLeft = hardwareMap.get(CRServo.class, "intakeLeft");
-        servoIntakeRight = hardwareMap.get(CRServo.class, "intakeRight");
-        servoMovingIntake = hardwareMap.get(Servo.class, "movingIntake");
-
-        armUD.setMode(DcMotor.RunMode.STOP_AND_RESET_ENCODER);
-        armUD.setMode(DcMotor.RunMode.RUN_USING_ENCODER);
 
 
 
 
 
         motor1.setDirection(DcMotor.Direction.FORWARD);
-        motor2.setDirection(DcMotor.Direction.REVERSE);
         motor3.setDirection(DcMotor.Direction.FORWARD);
-        motor4.setDirection(DcMotor.Direction.REVERSE);
+
 
         // Initialize IMU
         imu = hardwareMap.get(IMU.class, "imu");
@@ -82,9 +71,9 @@ public class AutonomousMovmentTest extends LinearOpMode {
 
 
 
+
         telemetry.addData("Status", "Sequence Complete");
         telemetry.update();
-
 
         if (waitforopmode() == true){
             sequence();
@@ -105,83 +94,37 @@ public class AutonomousMovmentTest extends LinearOpMode {
     }
     private void resetEncoders() {
         motor1.setMode(DcMotor.RunMode.STOP_AND_RESET_ENCODER);
-        motor2.setMode(DcMotor.RunMode.STOP_AND_RESET_ENCODER);
+
         motor3.setMode(DcMotor.RunMode.STOP_AND_RESET_ENCODER);
-        motor4.setMode(DcMotor.RunMode.STOP_AND_RESET_ENCODER);
+
 
         motor1.setMode(DcMotor.RunMode.RUN_USING_ENCODER);
-        motor2.setMode(DcMotor.RunMode.RUN_USING_ENCODER);
         motor3.setMode(DcMotor.RunMode.RUN_USING_ENCODER);
-        motor4.setMode(DcMotor.RunMode.RUN_USING_ENCODER);
     }
         private void sequence(){
 
 
-
-
-            Drive(13);
-            resetEncoders();
-            Side(8);
-            resetEncoders();
-            Drive(40);
-            resetEncoders();
-            spinToAngle(90);
-            resetEncoders();
-            Drive(9);
-            resetEncoders();
-            Side(-50);
-            resetEncoders();
-            Drive(12);
-    }
-
-    private void ArmUpDown(int rotations){
-
-        armUD.setTargetPosition(-rotations* UD_TICKS_PER_REV);
-        armUD.setMode(DcMotor.RunMode.RUN_TO_POSITION);
-        armUD.setPower(1);
-
-
-        while (opModeIsActive()){
-                if (armUD.getCurrentPosition()>1500){
-                    armUD.setTargetPosition(1500);
-
-            }
-
-            telemetry.addData("Armud",armUD.getCurrentPosition());
-            telemetry.update();
-        }
+        Drive(55);
+        resetEncoders();
+        spinToAngle(90);
 
 
     }
 
-    private void ServoIntakes(boolean In){
-
-        int inout = In ? 1:-1;
-
-        servoIntakeRight.setPower(inout);
-        servoIntakeLeft.setPower(-inout);
-
-
-    }
 
     private void Drive(int inch){
         resetEncoders();
 
 
-        motor1.setTargetPosition(-((int) COUNTS_PER_INCH * inch) );
-        motor2.setTargetPosition(((int) COUNTS_PER_INCH * inch));
+        motor1.setTargetPosition(((int) COUNTS_PER_INCH * inch) );
         motor3.setTargetPosition(((int) COUNTS_PER_INCH * inch));
-        motor4.setTargetPosition(-((int) COUNTS_PER_INCH * inch));
 
         motor1.setMode(DcMotor.RunMode.RUN_TO_POSITION);
-        motor2.setMode(DcMotor.RunMode.RUN_TO_POSITION);
         motor3.setMode(DcMotor.RunMode.RUN_TO_POSITION);
-        motor4.setMode(DcMotor.RunMode.RUN_TO_POSITION);
 
         motor1.setPower(1);
-        motor2.setPower(1);
+
         motor3.setPower(1);
-        motor4.setPower(1);
 
         while (opModeIsActive() && motorsAreBusy()) {
             telemetry.addData("Path", "Straight");
@@ -190,23 +133,6 @@ public class AutonomousMovmentTest extends LinearOpMode {
         stopMotors();
 }
 
-    private void Side(int inch){
-        resetEncoders();
-        motor1.setTargetPosition(-((int) COUNTS_PER_INCH * inch) );
-        motor2.setTargetPosition(-((int) COUNTS_PER_INCH * inch));
-        motor3.setTargetPosition(((int) COUNTS_PER_INCH * inch));
-        motor4.setTargetPosition(((int) COUNTS_PER_INCH * inch));
-
-        motor1.setMode(DcMotor.RunMode.RUN_TO_POSITION);
-        motor2.setMode(DcMotor.RunMode.RUN_TO_POSITION);
-        motor3.setMode(DcMotor.RunMode.RUN_TO_POSITION);
-        motor4.setMode(DcMotor.RunMode.RUN_TO_POSITION);
-
-        motor1.setPower(1);
-        motor2.setPower(1);
-        motor3.setPower(1);
-        motor4.setPower(1);
-        while (opModeIsActive() && motorsAreBusy()) {
 
 
 
@@ -215,24 +141,16 @@ public class AutonomousMovmentTest extends LinearOpMode {
 
 
 
-            telemetry.addData("Path", "Strafing");
-            telemetry.update();
-        }
-        stopMotors();
-    }
 
 
     private void stopMotors() {
         motor1.setPower(0);
-        motor2.setPower(0);
+
         motor3.setPower(0);
-        motor4.setPower(0);
+
     }
     private void spinToAngle(double targetAngle) {
-
         while (opModeIsActive()) {
-
-
             YawPitchRollAngles orientation = imu.getRobotYawPitchRollAngles();
             double currentYaw = orientation.getYaw(AngleUnit.DEGREES);
             double error = normalizeAngle(targetAngle - currentYaw);
@@ -246,9 +164,7 @@ public class AutonomousMovmentTest extends LinearOpMode {
             power = Range.clip(power, -TURN_SPEED, TURN_SPEED);
 
             motor1.setPower(power);
-            motor2.setPower(-power);
-            motor3.setPower(power);
-            motor4.setPower(-power);
+            motor3.setPower(-power);
 
             telemetry.addData("Target Angle", "%.2f", targetAngle);
             telemetry.addData("Current Angle", "%.2f", currentYaw);
@@ -258,12 +174,11 @@ public class AutonomousMovmentTest extends LinearOpMode {
         }
     }
     private boolean motorsAreBusy() {
-        return motor1.isBusy() || motor2.isBusy() || motor3.isBusy() || motor4.isBusy();
+        return motor1.isBusy() ||  motor3.isBusy();
     }
     private double normalizeAngle(double angle) {
         while (angle > 180) angle -= 360;
         while (angle < -180) angle += 360;
         return angle;
     }
-
 }
