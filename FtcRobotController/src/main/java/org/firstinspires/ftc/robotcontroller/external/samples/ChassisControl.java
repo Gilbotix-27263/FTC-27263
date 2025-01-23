@@ -10,6 +10,8 @@ public class ChassisControl extends LinearOpMode {
     private DcMotor motor1;
     private DcMotor motor2;
 
+    private static final int TICKS_PER_REV = 537; // Example encoder ticks per revolution
+
     @Override
     public void runOpMode() throws InterruptedException {
         // Initialize motors
@@ -19,6 +21,13 @@ public class ChassisControl extends LinearOpMode {
         // Set motor directions
         motor1.setDirection(DcMotor.Direction.FORWARD);
         motor2.setDirection(DcMotor.Direction.REVERSE);
+
+        // Reset and set encoders
+        motor1.setMode(DcMotor.RunMode.STOP_AND_RESET_ENCODER);
+        motor2.setMode(DcMotor.RunMode.STOP_AND_RESET_ENCODER);
+
+        motor1.setMode(DcMotor.RunMode.RUN_USING_ENCODER);
+        motor2.setMode(DcMotor.RunMode.RUN_USING_ENCODER);
 
         telemetry.addData("Status", "Initialized");
         telemetry.update();
@@ -42,7 +51,9 @@ public class ChassisControl extends LinearOpMode {
 
             // Telemetry for debugging
             telemetry.addData("Motor 1 Power", motor1.getPower());
+            telemetry.addData("Motor 1 Position", motor1.getCurrentPosition());
             telemetry.addData("Motor 2 Power", motor2.getPower());
+            telemetry.addData("Motor 2 Position", motor2.getCurrentPosition());
             telemetry.update();
         }
     }
