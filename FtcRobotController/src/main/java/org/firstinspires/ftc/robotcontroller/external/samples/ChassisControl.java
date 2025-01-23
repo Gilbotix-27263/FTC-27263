@@ -27,10 +27,10 @@ public class ChassisControl extends LinearOpMode {
 
         while (opModeIsActive()) {
             // Forward and backward control
-            double drive = -gamepad1.left_stick_y;
+            double drive = gamepad1.left_stick_y;
 
             // Turning control
-            double turn = gamepad1.right_stick_x;
+            double turn = -gamepad1.right_stick_x;
 
             // Motor power calculations
             double leftPower = drive + turn;
