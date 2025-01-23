@@ -181,7 +181,7 @@ public class FullRobotControl extends LinearOpMode {
                 int armUDCurrentPosition = armUD.getCurrentPosition();
 
                 if (Math.abs(armUDPower) > 0.1) {
-                    if ((armUDCurrentPosition <= -2100 && armUDPower < 0) || (armUDCurrentPosition >= 0 && armUDPower > 0)) {
+                    if ((armUDCurrentPosition <= -2200 && armUDPower < 0) || (armUDCurrentPosition >= 0 && armUDPower > 0)) {
                         armUD.setPower(0.0);
                     } else {
                         armUD.setMode(DcMotor.RunMode.RUN_USING_ENCODER);
