@@ -118,18 +118,18 @@ public class AutonomousMovmentTest extends LinearOpMode {
 
 
 
-
+            servoMovingIntake.setPosition(0.83);
             Drive(13);
             resetEncoders();
-            Side(8);
+            Side(9);
             resetEncoders();
-            Drive(40);
+            Drive(30);
             resetEncoders();
             spinToAngle(90);
             resetEncoders();
             Drive(9);
             resetEncoders();
-            Side(-50);
+            Side(-40);
             resetEncoders();
             Drive(12);
     }
