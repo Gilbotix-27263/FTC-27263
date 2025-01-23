@@ -77,7 +77,12 @@ public class AutonomousMovmentTest extends LinearOpMode {
 
         // Reset encoders
 
-
+        while (opModeInInit()){
+            armEx.setPower(0.1);
+            if (armEx.getCurrentPosition()<0){
+                armEx.setPower(0);
+            }
+        }
         telemetry.addData("Status", "Ready to start");
         telemetry.update();
         waitForStart();
@@ -122,19 +127,20 @@ public class AutonomousMovmentTest extends LinearOpMode {
 
 
 
-            Drive(10);
+
+            Drive(13);
             resetEncoders();
             Side(8);
             resetEncoders();
-            Drive(32);
+            Drive(40);
             resetEncoders();
             spinToAngle(90);
             resetEncoders();
-            Drive(12);
+            Drive(9);
             resetEncoders();
-            Side(-40);
-
-
+            Side(-50);
+            resetEncoders();
+            Drive(12);
     }
     private void ArmUpDown(int rotations){
 
@@ -146,7 +152,9 @@ public class AutonomousMovmentTest extends LinearOpMode {
         while (opModeIsActive()){
                 if (armUD.getCurrentPosition()>1500){
                     armUD.setTargetPosition(1500);
+
             }
+
             telemetry.addData("Armud",armUD.getCurrentPosition());
             telemetry.update();
         }
@@ -185,6 +193,8 @@ public class AutonomousMovmentTest extends LinearOpMode {
     private void Drive(int inch){
         resetEncoders();
 
+
+        armEx.setPower(0.2);
         motor1.setTargetPosition(-((int) COUNTS_PER_INCH * inch) );
         motor2.setTargetPosition(((int) COUNTS_PER_INCH * inch));
         motor3.setTargetPosition(((int) COUNTS_PER_INCH * inch));
@@ -201,6 +211,9 @@ public class AutonomousMovmentTest extends LinearOpMode {
         motor4.setPower(1);
 
         while (opModeIsActive() && motorsAreBusy()) {
+            if (armEx.getCurrentPosition() <=0){
+                armEx.setPower(0);
+            }
             telemetry.addData("Path", "Straight");
             telemetry.update();
         }
@@ -209,6 +222,7 @@ public class AutonomousMovmentTest extends LinearOpMode {
 
     private void Side(int inch){
         resetEncoders();
+        armEx.setPower(0.2);
         motor1.setTargetPosition(-((int) COUNTS_PER_INCH * inch) );
         motor2.setTargetPosition(-((int) COUNTS_PER_INCH * inch));
         motor3.setTargetPosition(((int) COUNTS_PER_INCH * inch));
@@ -224,6 +238,16 @@ public class AutonomousMovmentTest extends LinearOpMode {
         motor3.setPower(1);
         motor4.setPower(1);
         while (opModeIsActive() && motorsAreBusy()) {
+            if (armEx.getCurrentPosition() <=0){
+                armEx.setPower(0);
+            }
+
+
+
+
+
+
+
             telemetry.addData("Path", "Strafing");
             telemetry.update();
         }
@@ -238,7 +262,11 @@ public class AutonomousMovmentTest extends LinearOpMode {
         motor4.setPower(0);
     }
     private void spinToAngle(double targetAngle) {
+        armEx.setPower(-1);
         while (opModeIsActive()) {
+            if (armEx.getCurrentPosition() <=0){
+                armEx.setPower(0);
+            }
             YawPitchRollAngles orientation = imu.getRobotYawPitchRollAngles();
             double currentYaw = orientation.getYaw(AngleUnit.DEGREES);
             double error = normalizeAngle(targetAngle - currentYaw);
