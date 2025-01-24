@@ -21,6 +21,8 @@ import org.firstinspires.ftc.robotcore.external.navigation.YawPitchRollAngles;
 @Autonomous(group = "Main")
 public class AutonomousMovmentTest extends LinearOpMode {
 
+
+
     private int Tile= 24;
     private DcMotor motor1; // Front Left
     private DcMotor motor2; // Front Right
@@ -37,6 +39,9 @@ public class AutonomousMovmentTest extends LinearOpMode {
     private CRServo servoIntakeLeft, servoIntakeRight; // CRServos for intake mechanism
     private Servo servoMovingIntake; // Servo for the moving intake component
 
+    private  int currentgridx = 0;
+    private int   getCurrentgridy = 0;
+
     // REV Touch Sensor to detect the zero position of the arm extension
     private static final double TURN_SPEED = 0.3;
     private static final int COUNTS_PER_REV = 537; // Example: GoBILDA Yellow Jacket 312RPM
@@ -44,6 +49,39 @@ public class AutonomousMovmentTest extends LinearOpMode {
     private static final double COUNTS_PER_INCH = (COUNTS_PER_REV) / (Math.PI * WHEEL_DIAMETER);
 
     private DistanceSensor sensorDistance;
+
+    private DcMotor armEx;
+    private TouchSensor armExZeroSensor;
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
     @Override
@@ -58,10 +96,16 @@ public class AutonomousMovmentTest extends LinearOpMode {
         servoIntakeRight = hardwareMap.get(CRServo.class, "intakeRight");
         servoMovingIntake = hardwareMap.get(Servo.class, "movingIntake");
         sensorDistance = hardwareMap.get(DistanceSensor.class, "sensor_distance");
+        armEx = hardwareMap.get(DcMotor.class, "arm");
+        armExZeroSensor = hardwareMap.get(TouchSensor.class, "armExZeroSensor");
+
 
 
         armUD.setMode(DcMotor.RunMode.STOP_AND_RESET_ENCODER);
         armUD.setMode(DcMotor.RunMode.RUN_USING_ENCODER);
+
+        armEx.setMode(DcMotor.RunMode.STOP_AND_RESET_ENCODER);
+        armEx.setMode(DcMotor.RunMode.RUN_USING_ENCODER);
 
 
 
@@ -92,10 +136,24 @@ public class AutonomousMovmentTest extends LinearOpMode {
         telemetry.addData("Status", "Sequence Complete");
         telemetry.update();
 
-        while (opModeIsActive()){
-            if (sensorDistance.getDistance(DistanceUnit.INCH) <= 10){
-                spinToAngle(90);
+        while (opModeIsActive()) {
+            servoMovingIntake.setPosition(0.83);
+            YawPitchRollAngles orientation = imu.getRobotYawPitchRollAngles();
+            double currentaYaw = orientation.getYaw(AngleUnit.DEGREES);
+            if (sensorDistance.getDistance(DistanceUnit.INCH)<=20){
+                stopMotors();
+                spinToAngle(currentaYaw-90);
             }
+            else {
+                motor1.setPower(-0.8);
+                motor2.setPower(0.8);
+                motor3.setPower(0.8);
+                motor4.setPower(-0.8);
+            }
+
+
+
+
 
 
             telemetry.addData("deviceName", sensorDistance.getDeviceName() );
@@ -112,6 +170,30 @@ public class AutonomousMovmentTest extends LinearOpMode {
     }
 
 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
     private void resetEncoders() {
         motor1.setMode(DcMotor.RunMode.STOP_AND_RESET_ENCODER);
         motor2.setMode(DcMotor.RunMode.STOP_AND_RESET_ENCODER);
@@ -123,6 +205,35 @@ public class AutonomousMovmentTest extends LinearOpMode {
         motor3.setMode(DcMotor.RunMode.RUN_USING_ENCODER);
         motor4.setMode(DcMotor.RunMode.RUN_USING_ENCODER);
     }
+    private void armEX(int d){
+        armEx.setTargetPosition(-d* EX_TICKS_PER_INCH);
+        armEx.setMode(DcMotor.RunMode.RUN_TO_POSITION);
+        while (opModeIsActive()){
+            if (armExZeroSensor.isPressed()){
+                armEx.setPower(0);
+            }
+            if (armEx.getCurrentPosition()<=-5500){
+                armEx.setPower(0);
+            }
+        }
+    }
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
     private void ArmUpDown(int rotations){
@@ -226,6 +337,7 @@ public class AutonomousMovmentTest extends LinearOpMode {
 
             YawPitchRollAngles orientation = imu.getRobotYawPitchRollAngles();
             double currentYaw = orientation.getYaw(AngleUnit.DEGREES);
+
             double error = normalizeAngle(targetAngle - currentYaw);
 
             if (Math.abs(error) <= 0.09) { // Deadband of 1 degree
@@ -256,5 +368,7 @@ public class AutonomousMovmentTest extends LinearOpMode {
         while (angle < -180) angle += 360;
         return angle;
     }
+
+
 
 }
