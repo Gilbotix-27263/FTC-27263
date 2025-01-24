@@ -1,4 +1,5 @@
 package org.firstinspires.ftc.robotcontroller.external.samples;
+import com.qualcomm.hardware.rev.Rev2mDistanceSensor;
 
 import com.qualcomm.hardware.rev.RevHubOrientationOnRobot;
 import com.qualcomm.robotcore.eventloop.opmode.Autonomous;
@@ -10,6 +11,9 @@ import com.qualcomm.robotcore.hardware.Servo;
 import com.qualcomm.robotcore.hardware.TouchSensor;
 import com.qualcomm.robotcore.hardware.usb.RobotUsbDevice;
 import com.qualcomm.robotcore.util.Range;
+import com.qualcomm.robotcore.hardware.DistanceSensor;
+import org.firstinspires.ftc.robotcore.external.navigation.DistanceUnit;
+
 
 import org.firstinspires.ftc.robotcore.external.navigation.AngleUnit;
 import org.firstinspires.ftc.robotcore.external.navigation.YawPitchRollAngles;
@@ -39,6 +43,7 @@ public class AutonomousMovmentTest extends LinearOpMode {
     private static final double WHEEL_DIAMETER = 4.0; // Wheel diameter in inches
     private static final double COUNTS_PER_INCH = (COUNTS_PER_REV) / (Math.PI * WHEEL_DIAMETER);
 
+    private DistanceSensor sensorDistance;
 
 
     @Override
@@ -52,6 +57,8 @@ public class AutonomousMovmentTest extends LinearOpMode {
         servoIntakeLeft = hardwareMap.get(CRServo.class, "intakeLeft");
         servoIntakeRight = hardwareMap.get(CRServo.class, "intakeRight");
         servoMovingIntake = hardwareMap.get(Servo.class, "movingIntake");
+        sensorDistance = hardwareMap.get(DistanceSensor.class, "sensor_distance");
+
 
         armUD.setMode(DcMotor.RunMode.STOP_AND_RESET_ENCODER);
         armUD.setMode(DcMotor.RunMode.RUN_USING_ENCODER);
@@ -85,24 +92,26 @@ public class AutonomousMovmentTest extends LinearOpMode {
         telemetry.addData("Status", "Sequence Complete");
         telemetry.update();
 
+        while (opModeIsActive()){
+            if (sensorDistance.getDistance(DistanceUnit.INCH) <= 10){
+                spinToAngle(90);
+            }
 
-        if (waitforopmode() == true){
-            sequence();
+
+            telemetry.addData("deviceName", sensorDistance.getDeviceName() );
+            telemetry.addData("range", String.format("%.01f mm", sensorDistance.getDistance(DistanceUnit.MM)));
+            telemetry.addData("range", String.format("%.01f cm", sensorDistance.getDistance(DistanceUnit.CM)));
+            telemetry.addData("range", String.format("%.01f m", sensorDistance.getDistance(DistanceUnit.METER)));
+            telemetry.addData("range", String.format("%.01f in", sensorDistance.getDistance(DistanceUnit.INCH)));
+
         }
+
+
 
 
     }
 
-    private boolean waitforopmode(){
-        while (true){
-            if (opModeIsActive()){
-                return  true;
-            }
-            else{
-                continue;
-            }
-        }
-    }
+
     private void resetEncoders() {
         motor1.setMode(DcMotor.RunMode.STOP_AND_RESET_ENCODER);
         motor2.setMode(DcMotor.RunMode.STOP_AND_RESET_ENCODER);
@@ -114,25 +123,7 @@ public class AutonomousMovmentTest extends LinearOpMode {
         motor3.setMode(DcMotor.RunMode.RUN_USING_ENCODER);
         motor4.setMode(DcMotor.RunMode.RUN_USING_ENCODER);
     }
-        private void sequence(){
 
-
-
-            servoMovingIntake.setPosition(0.83);
-            Drive(13);
-            resetEncoders();
-            Side(9);
-            resetEncoders();
-            Drive(30);
-            resetEncoders();
-            spinToAngle(90);
-            resetEncoders();
-            Drive(9);
-            resetEncoders();
-            Side(-40);
-            resetEncoders();
-            Drive(12);
-    }
 
     private void ArmUpDown(int rotations){
 
