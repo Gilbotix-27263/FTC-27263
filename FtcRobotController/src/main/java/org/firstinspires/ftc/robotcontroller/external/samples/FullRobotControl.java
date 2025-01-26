@@ -160,7 +160,7 @@ public class FullRobotControl extends LinearOpMode {
                     armEx.setPower(0.0); // Ignore RT input within restricted range
                 }
                 // Prevent backward movement beyond the lower limit of -2150
-                else if (armExCurrentPosition <= -2150 && armExPower < 0) {
+                else if (armExCurrentPosition <= -2250 && armExPower < 0) {
                     armEx.setPower(0.0); // Stop backward movement if beyond limit
                 }
                 // Allow movement within valid range
