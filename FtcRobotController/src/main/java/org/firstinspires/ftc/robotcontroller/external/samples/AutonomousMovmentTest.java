@@ -21,7 +21,7 @@ import org.firstinspires.ftc.robotcore.external.navigation.YawPitchRollAngles;
 @Autonomous(group = "Main")
 public class AutonomousMovmentTest extends LinearOpMode {
 
-
+    private boolean x = false;
 
     private int Tile= 24;
     private DcMotor motor1; // Front Left
@@ -104,6 +104,7 @@ public class AutonomousMovmentTest extends LinearOpMode {
         armUD.setMode(DcMotor.RunMode.STOP_AND_RESET_ENCODER);
         armUD.setMode(DcMotor.RunMode.RUN_USING_ENCODER);
 
+
         armEx.setMode(DcMotor.RunMode.STOP_AND_RESET_ENCODER);
         armEx.setMode(DcMotor.RunMode.RUN_USING_ENCODER);
 
@@ -127,6 +128,7 @@ public class AutonomousMovmentTest extends LinearOpMode {
 
         telemetry.addData("Status", "Ready to start");
         telemetry.update();
+
         waitForStart();
 
 
@@ -140,9 +142,23 @@ public class AutonomousMovmentTest extends LinearOpMode {
             servoMovingIntake.setPosition(0.83);
             YawPitchRollAngles orientation = imu.getRobotYawPitchRollAngles();
             double currentaYaw = orientation.getYaw(AngleUnit.DEGREES);
-            if (sensorDistance.getDistance(DistanceUnit.INCH)<=20){
+            if (sensorDistance.getDistance(DistanceUnit.INCH)<=4){
+                x = true;
                 stopMotors();
-                spinToAngle(currentaYaw-90);
+                Side(2);
+                resetEncoders();
+                armEx.setPower(-1);
+                if (armExZeroSensor.isPressed()){
+                    armEx.setPower(0);
+                }
+                servoMovingIntake.setPosition(0.5);
+                armEx.setPower(1);
+                if (armEx.getCurrentPosition()<=-2500){
+                    armEx.setPower(0);
+                }
+                ServoIntakes(true);
+
+
             }
             else {
                 motor1.setPower(-0.8);
@@ -211,6 +227,8 @@ public class AutonomousMovmentTest extends LinearOpMode {
         while (opModeIsActive()){
             if (armExZeroSensor.isPressed()){
                 armEx.setPower(0);
+                armEx.setMode(DcMotor.RunMode.STOP_AND_RESET_ENCODER);
+                armEx.setMode(DcMotor.RunMode.RUN_USING_ENCODER);
             }
             if (armEx.getCurrentPosition()<=-5500){
                 armEx.setPower(0);
