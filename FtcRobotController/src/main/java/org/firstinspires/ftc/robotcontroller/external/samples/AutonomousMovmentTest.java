@@ -21,7 +21,6 @@ import org.firstinspires.ftc.robotcore.external.navigation.YawPitchRollAngles;
 @Autonomous(group = "Main")
 public class AutonomousMovmentTest extends LinearOpMode {
 
-    private boolean x = false;
 
     private int Tile= 24;
     private DcMotor motor1; // Front Left
@@ -142,8 +141,7 @@ public class AutonomousMovmentTest extends LinearOpMode {
             servoMovingIntake.setPosition(0.83);
             YawPitchRollAngles orientation = imu.getRobotYawPitchRollAngles();
             double currentaYaw = orientation.getYaw(AngleUnit.DEGREES);
-            if (sensorDistance.getDistance(DistanceUnit.INCH)<=4){
-                x = true;
+            if (sensorDistance.getDistance(DistanceUnit.INCH)<=10){
                 stopMotors();
                 Side(2);
                 resetEncoders();
