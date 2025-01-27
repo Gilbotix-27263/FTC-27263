@@ -11,6 +11,8 @@ import com.qualcomm.robotcore.hardware.TouchSensor;
 import com.qualcomm.robotcore.hardware.usb.RobotUsbDevice;
 import com.qualcomm.robotcore.hardware.DistanceSensor;
 import com.qualcomm.robotcore.util.Range;
+import com.qualcomm.robotcore.util.ElapsedTime;
+
 
 import org.firstinspires.ftc.robotcore.external.navigation.AngleUnit;
 import org.firstinspires.ftc.robotcore.external.navigation.DistanceUnit;
@@ -26,7 +28,7 @@ public class AutonomousMovmentTest extends LinearOpMode {
     private DcMotor motor4; // Back Right
     private IMU imu;
     private int UD_TICKS_PER_REV = 	1425;
-
+    private DcMotor armEx;
     private int EX_TICKS_PER_REV = 	540;
     private int EX_FULL = 58 * (EX_TICKS_PER_REV/10);
     private int EX_TICKS_PER_INCH = EX_TICKS_PER_REV * (1/8);
@@ -41,8 +43,9 @@ public class AutonomousMovmentTest extends LinearOpMode {
     private static final double WHEEL_DIAMETER = 4.0; // Wheel diameter in inches
     private static final double COUNTS_PER_INCH = (COUNTS_PER_REV) / (Math.PI * WHEEL_DIAMETER);
     private DistanceSensor sensorDistance;
+    private TouchSensor armExZeroSensor;
 
-
+    private ElapsedTime Timer;
 
     @Override
     public void runOpMode() {
@@ -56,6 +59,8 @@ public class AutonomousMovmentTest extends LinearOpMode {
         servoIntakeLeft = hardwareMap.get(CRServo.class, "intakeLeft");
         servoIntakeRight = hardwareMap.get(CRServo.class, "intakeRight");
         servoMovingIntake = hardwareMap.get(Servo.class, "movingIntake");
+        armEx = hardwareMap.get(DcMotor.class,"arm");
+        armExZeroSensor = hardwareMap.get(TouchSensor.class, "armExZeroSensor");
 
         armUD.setMode(DcMotor.RunMode.STOP_AND_RESET_ENCODER);
         armUD.setMode(DcMotor.RunMode.RUN_USING_ENCODER);
@@ -90,9 +95,14 @@ public class AutonomousMovmentTest extends LinearOpMode {
         telemetry.update();
 
         while (opModeIsActive()){
-            if (sensorDistance.getDistance(DistanceUnit.INCH) <= 10){
-                spinToAngle(90);
-            }
+            Drive(4);
+            ArmUd(-UD_TICKS_PER_REV*(1/4));
+            ArmEx(-5400);
+            ServoIntakes(true);
+            ArmEx(0);
+            ServoIntakes(false);
+
+
         }
 
     }
@@ -111,25 +121,7 @@ public class AutonomousMovmentTest extends LinearOpMode {
     }
 
 
-    private void ArmUpDown(int rotations){
 
-        armUD.setTargetPosition(-rotations* UD_TICKS_PER_REV);
-        armUD.setMode(DcMotor.RunMode.RUN_TO_POSITION);
-        armUD.setPower(1);
-
-
-        while (opModeIsActive()){
-                if (armUD.getCurrentPosition()>1500){
-                    armUD.setTargetPosition(1500);
-
-            }
-
-            telemetry.addData("Armud",armUD.getCurrentPosition());
-            telemetry.update();
-        }
-
-
-    }
 
     private void ServoIntakes(boolean In){
 
@@ -137,10 +129,46 @@ public class AutonomousMovmentTest extends LinearOpMode {
 
         servoIntakeRight.setPower(inout);
         servoIntakeLeft.setPower(-inout);
+        Timer.reset();
+        Timer.startTime();
+        while (true){
+            if (Timer.seconds()>=10){
+                servoIntakeRight.setPower(0);
+                servoIntakeLeft.setPower(0);
+                break;
+            }
 
+            else{
+                continue;
+            }
+        }
 
     }
-
+    private void ArmUd(int ticks){
+        armUD.setTargetPosition(ticks);
+        armUD.setMode(DcMotor.RunMode.RUN_TO_POSITION);
+        while ((opModeIsActive()) && armUD.isBusy()){
+            if ((armUD.getCurrentPosition()<=0) || (armUD.getTargetPosition() <= armUD.getCurrentPosition())){
+                armUD.setPower(0);
+            }else{
+                armUD.setPower(1);
+            }
+        }
+    }
+    private void ArmEx(int ticks){
+        armEx.setTargetPosition(ticks);
+        armEx.setMode(DcMotor.RunMode.RUN_TO_POSITION);
+        while ((opModeIsActive()) && armEx.isBusy()){
+            if (armExZeroSensor.isPressed()){
+                armEx.setMode(DcMotor.RunMode.STOP_AND_RESET_ENCODER);
+            }
+            if ((armEx.getCurrentPosition()<=-5500) || (armEx.getTargetPosition() <= armEx.getCurrentPosition()) || armEx.getCurrentPosition() >=0){
+                armEx.setPower(0);
+            }else{
+                armEx.setPower(1);
+            }
+        }
+    }
     private void Drive(int inch){
         resetEncoders();
 

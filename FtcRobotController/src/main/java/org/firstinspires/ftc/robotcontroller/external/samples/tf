@@ -1,0 +1,19 @@
+    private void ArmUpDown(int rotations){
+
+        armUD.setTargetPosition(-rotations* UD_TICKS_PER_REV);
+        armUD.setMode(DcMotor.RunMode.RUN_TO_POSITION);
+        armUD.setPower(1);
+
+
+        while (opModeIsActive()){
+                if (armUD.getCurrentPosition()>1500){
+                    armUD.setTargetPosition(1500);
+
+            }
+
+            telemetry.addData("Armud",armUD.getCurrentPosition());
+            telemetry.update();
+        }
+
+
+    }
