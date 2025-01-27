@@ -45,7 +45,7 @@ public class AutonomousMovmentTest extends LinearOpMode {
     private DistanceSensor sensorDistance;
     private TouchSensor armExZeroSensor;
 
-    private ElapsedTime Timer;
+
 
     @Override
     public void runOpMode() {
@@ -64,6 +64,9 @@ public class AutonomousMovmentTest extends LinearOpMode {
 
         armUD.setMode(DcMotor.RunMode.STOP_AND_RESET_ENCODER);
         armUD.setMode(DcMotor.RunMode.RUN_USING_ENCODER);
+
+        armEx.setMode(DcMotor.RunMode.STOP_AND_RESET_ENCODER)
+        ;armEx.setMode(DcMotor.RunMode.RUN_USING_ENCODER);
 
 
 
@@ -94,20 +97,29 @@ public class AutonomousMovmentTest extends LinearOpMode {
         telemetry.addData("Status", "Sequence Complete");
         telemetry.update();
 
+
+
         while (opModeIsActive()){
-            Drive(4);
-            ArmUd(-UD_TICKS_PER_REV*(1/4));
-            ArmEx(-5400);
-            ServoIntakes(true);
-            ArmEx(0);
-            ServoIntakes(false);
+            seq();
 
 
         }
 
     }
-
-
+    private void seq(){
+        Drive(4);
+        resetEncoders();
+        tel();
+        ArmUd(-UD_TICKS_PER_REV/4);
+        tel();
+        ArmEx(-5400);
+        tel();
+        ServoIntakes(true);
+        tel();
+        ArmEx(0);
+        tel();
+        ServoIntakes(false);
+    }
     private void resetEncoders() {
         motor1.setMode(DcMotor.RunMode.STOP_AND_RESET_ENCODER);
         motor2.setMode(DcMotor.RunMode.STOP_AND_RESET_ENCODER);
@@ -129,32 +141,17 @@ public class AutonomousMovmentTest extends LinearOpMode {
 
         servoIntakeRight.setPower(inout);
         servoIntakeLeft.setPower(-inout);
-        Timer.reset();
-        Timer.startTime();
-        while (true){
-            if (Timer.seconds()>=10){
-                servoIntakeRight.setPower(0);
-                servoIntakeLeft.setPower(0);
-                break;
-            }
 
-            else{
-                continue;
-            }
-        }
+
 
     }
     private void ArmUd(int ticks){
         armUD.setTargetPosition(ticks);
         armUD.setMode(DcMotor.RunMode.RUN_TO_POSITION);
-        while ((opModeIsActive()) && armUD.isBusy()){
-            if ((armUD.getCurrentPosition()<=0) || (armUD.getTargetPosition() <= armUD.getCurrentPosition())){
-                armUD.setPower(0);
-            }else{
-                armUD.setPower(1);
-            }
+        armUD.setPower(1);
+
         }
-    }
+
     private void ArmEx(int ticks){
         armEx.setTargetPosition(ticks);
         armEx.setMode(DcMotor.RunMode.RUN_TO_POSITION);
@@ -162,7 +159,7 @@ public class AutonomousMovmentTest extends LinearOpMode {
             if (armExZeroSensor.isPressed()){
                 armEx.setMode(DcMotor.RunMode.STOP_AND_RESET_ENCODER);
             }
-            if ((armEx.getCurrentPosition()<=-5500) || (armEx.getTargetPosition() <= armEx.getCurrentPosition()) || armEx.getCurrentPosition() >=0){
+            if ((armEx.getCurrentPosition()<=-5500) || (armEx.getTargetPosition() <= armEx.getCurrentPosition()) || armEx.getCurrentPosition() >100){
                 armEx.setPower(0);
             }else{
                 armEx.setPower(1);
@@ -270,5 +267,14 @@ public class AutonomousMovmentTest extends LinearOpMode {
         while (angle < -180) angle += 360;
         return angle;
     }
+    private void tel(){
+        while (opModeIsActive()){
+            telemetry.addData("motors working","motor1: ",motor1.isBusy(),"motor1: ",motor1.isBusy(),"motor2: ",motor2.isBusy()
+            ,"motor3: ",motor1.isBusy(),"motor4: ",motor1.isBusy(),"ex: ",armEx.isBusy(),"ud: ",armUD.isBusy(),"intake: ",servoIntakeLeft.getPower());
+            telemetry.addData("ud pos", armUD.getCurrentPosition());
+            telemetry.addData("ex pos",armEx.getCurrentPosition());
+            telemetry.update();
 
-}
+    }
+
+}}
