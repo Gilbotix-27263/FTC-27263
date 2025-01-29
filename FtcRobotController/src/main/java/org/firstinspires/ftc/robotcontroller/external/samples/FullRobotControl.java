@@ -30,8 +30,8 @@ public class FullRobotControl extends LinearOpMode {
     private ElapsedTime zeroDelayTimer = new ElapsedTime(); // Timer for zeroing delay
 
     // Maximum power for arm motors
-    private static final double MAX_ARMUD_POWER = 0.4;
-    private static final double MAX_ARMEX_POWER = 1;
+    private static final double MAX_ARMUD_POWER = 0.5;
+    private static final double MAX_ARMEX_POWER = 0.85;
 
     private static final double ZERO_DELAY = 1.0; // Minimum delay in seconds between zeroing actions
 
@@ -156,11 +156,11 @@ public class FullRobotControl extends LinearOpMode {
                 int armExCurrentPosition = armEx.getCurrentPosition();
 
                 // Prevent movement when arm is within the range -12 to 0
-                if (armExCurrentPosition >= -50 && gamepad2.right_trigger > 0.1) {
+                if (armExCurrentPosition >= -100 && armExPower > 0) {
                     armEx.setPower(0.0); // Ignore RT input within restricted range
                 }
                 // Prevent backward movement beyond the lower limit of -2150
-                else if (armExCurrentPosition <= -2150 && armExPower < 0) {
+                else if (armExCurrentPosition <= -2250 && armExPower < 0) {
                     armEx.setPower(0.0); // Stop backward movement if beyond limit
                 }
                 // Allow movement within valid range
