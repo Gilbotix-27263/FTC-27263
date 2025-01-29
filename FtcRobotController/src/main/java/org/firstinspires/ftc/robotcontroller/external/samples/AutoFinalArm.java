@@ -1,3 +1,5 @@
+//Please Delete The "addData" In The Final Version. These Are Just For Testing
+
 package org.firstinspires.ftc.robotcontroller.external.samples;
 
 import com.qualcomm.robotcore.eventloop.opmode.Autonomous;
@@ -37,9 +39,13 @@ public class AutoFinalArm extends LinearOpMode {
         }
     }
 
-    private void moveUD()
+    private void moveUD(int encoderCounts, int speed/*IDK If We Need This*/)
     {
-        telemetry.addData("Action", "MoveUD");
+        telemetry.addData("Action", "MoveUD | " + encoderCounts + ", " + speed);
+
+        armUD.setTargetPosition(encoderCounts);
+        armUD.setMode(DcMotor.RunMode.RUN_TO_POSITION);
+        armUD.setPower(speed);
     }
 
     private void moveEx()
