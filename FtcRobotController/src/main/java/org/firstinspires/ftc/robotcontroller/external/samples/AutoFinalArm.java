@@ -39,21 +39,21 @@ public class AutoFinalArm extends LinearOpMode {
 
     private void moveUD()
     {
-        telemetry.addData("Speed Mode");
+        telemetry.addData("Action", "MoveUD");
     }
 
     private void moveEx()
     {
-        
+        telemetry.addData("Action", "MoveEx");
     }
 
     private void pickUp()
     {
-
+        telemetry.addData("Action", "Pick Up");
     }
 
     private void release()
     {
-
+        telemetry.addData("Action", "Release");
     }
 }
