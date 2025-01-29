@@ -30,8 +30,8 @@ public class FullRobotControl extends LinearOpMode {
     private ElapsedTime zeroDelayTimer = new ElapsedTime(); // Timer for zeroing delay
 
     // Maximum power for arm motors
-    private static final double MAX_ARMUD_POWER = 0.4;
-    private static final double MAX_ARMEX_POWER = 0.8;
+    private static final double MAX_ARMUD_POWER = 0.5;
+    private static final double MAX_ARMEX_POWER = 0.85;
 
     private static final double ZERO_DELAY = 1.0; // Minimum delay in seconds between zeroing actions
 
