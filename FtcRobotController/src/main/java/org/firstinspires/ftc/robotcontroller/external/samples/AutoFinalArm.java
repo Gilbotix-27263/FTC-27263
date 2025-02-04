@@ -45,6 +45,7 @@ public class AutoFinalArm extends LinearOpMode {
                 armUD.setPower(0);
             }
 
+            //Change
             if(gamepad1.b)
             {
                 moveArm(false, e, s);
