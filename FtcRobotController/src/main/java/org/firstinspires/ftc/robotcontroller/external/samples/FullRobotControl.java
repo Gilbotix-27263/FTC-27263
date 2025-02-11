@@ -19,6 +19,7 @@ public class FullRobotControl extends LinearOpMode {
     private DcMotor armUD, armEx;
     private CRServo servoIntakeLeft, servoIntakeRight; // CRServos for intake mechanism
     private Servo servoMovingIntake; // Servo for the moving intake component
+    private Servo neoPixelServo; // Servo for NeoPixel control
 
     // REV Touch Sensor to detect the zero position of the arm extension
     private TouchSensor armExZeroSensor;
@@ -38,6 +39,8 @@ public class FullRobotControl extends LinearOpMode {
     // Arm state flag
     private boolean armExZeroed = false;
 
+    private double selectedColor = 0.5; // Default to Purple (middle)
+
     @Override
     public void runOpMode() throws InterruptedException {
 
@@ -52,6 +55,8 @@ public class FullRobotControl extends LinearOpMode {
         servoIntakeRight = hardwareMap.get(CRServo.class, "intakeRight");
         servoMovingIntake = hardwareMap.get(Servo.class, "movingIntake");
         armExZeroSensor = hardwareMap.get(TouchSensor.class, "armExZeroSensor");
+        neoPixelServo = hardwareMap.get(Servo.class, "neoPixelServo");
+
 
         // Configure motor directions for driving
         motor1.setDirection(DcMotor.Direction.FORWARD);
@@ -102,8 +107,30 @@ public class FullRobotControl extends LinearOpMode {
         int armExTargetPosition = armEx.getCurrentPosition();
         int armUDTargetPosition = armUD.getCurrentPosition();
 
-        // Wait for the start signal
+        // Set default team color to Purple before INIT is pressed
+        neoPixelServo.setPosition(0.5);
+        telemetry.addData("Status", "Initialized - Defaulting to Purple");
+        telemetry.addData("Select Team", "Press A for Red, B for Blue");
+        telemetry.update();
+
+        // Team selection loop (update color until Start is pressed)
+        while (!isStarted()) {
+            if (gamepad1.a) {
+                selectedColor = 0.0; // Red Team
+            } else if (gamepad1.b) {
+                selectedColor = 1.0; // Blue Team
+            }
+            neoPixelServo.setPosition(selectedColor);
+            telemetry.addData("Selected Team", selectedColor == 0.0 ? "Red" : "Blue");
+            telemetry.update();
+        }
+
         waitForStart();
+
+        // Lock the selected team color for the match
+        neoPixelServo.setPosition(selectedColor);
+        telemetry.addData("Final Color", selectedColor == 0.0 ? "Red" : "Blue");
+        telemetry.update();
 
         while (opModeIsActive()) {
 
