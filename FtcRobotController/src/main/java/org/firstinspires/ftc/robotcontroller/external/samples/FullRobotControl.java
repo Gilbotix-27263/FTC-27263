@@ -34,6 +34,15 @@ public class FullRobotControl extends LinearOpMode {
     private static final double MAX_ARMUD_POWER = 0.4;
     private static final double MAX_ARMEX_POWER = 0.8;
 
+    private static final int ARM_UD_HIGH = -2000;
+    private static final int ARM_UD_MID = 0;
+    private static final int ARM_UD_LOW = -500;
+
+    private static final int ARM_EX_HIGH = -2000;
+    private static final int ARM_EX_MID = 0;
+    private static final int ARM_EX_LOW = -1000;
+
+
     private static final double ZERO_DELAY = 1.0; // Minimum delay in seconds between zeroing actions
 
     // Arm state flag
@@ -221,7 +230,29 @@ public class FullRobotControl extends LinearOpMode {
                     armUD.setPower(0.5);
                 }
 
-                // Intake mechanism controls (gamepad2)
+            if (gamepad2.right_stick_y < -0.5) {
+                armUD.setTargetPosition(ARM_UD_HIGH);
+                armEx.setTargetPosition(ARM_EX_HIGH);
+            } else if (gamepad2.right_stick_y > 0.5) {
+                armUD.setTargetPosition(ARM_UD_LOW);
+                armEx.setTargetPosition(ARM_EX_LOW);
+            } else {
+                armUD.setTargetPosition(ARM_UD_MID);
+                armEx.setTargetPosition(ARM_EX_MID);
+            }
+            armUD.setMode(DcMotor.RunMode.RUN_TO_POSITION);
+            armUD.setPower(0.5);
+            armEx.setMode(DcMotor.RunMode.RUN_TO_POSITION);
+            armEx.setPower(0.5);
+
+            double armExPower = gamepad2.right_trigger - gamepad2.left_trigger;
+
+            armUD.setMode(DcMotor.RunMode.RUN_USING_ENCODER);
+            armUD.setPower(armUDPower);
+            armEx.setMode(DcMotor.RunMode.RUN_USING_ENCODER);
+            armEx.setPower(armExPower * MAX_ARMEX_POWER);
+
+            // Intake mechanism controls (gamepad2)
                 if (gamepad2.a) {
                     servoIntakeLeft.setPower(1.0); // Intake forward
                     servoIntakeRight.setPower(-1.0); // Opposite direction
