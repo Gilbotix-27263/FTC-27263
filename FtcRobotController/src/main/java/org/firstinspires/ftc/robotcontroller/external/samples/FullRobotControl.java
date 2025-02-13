@@ -19,6 +19,7 @@ public class FullRobotControl extends LinearOpMode {
     private DcMotor armUD, armEx;
     private CRServo servoIntakeLeft, servoIntakeRight; // CRServos for intake mechanism
     private Servo servoMovingIntake; // Servo for the moving intake component
+    private Servo neoPixelServo; // Servo for NeoPixel control
 
     // REV Touch Sensor to detect the zero position of the arm extension
     private TouchSensor armExZeroSensor;
@@ -33,10 +34,21 @@ public class FullRobotControl extends LinearOpMode {
     private static final double MAX_ARMUD_POWER = 0.4;
     private static final double MAX_ARMEX_POWER = 0.8;
 
+    private static final int ARM_UD_HIGH = -2000;
+    private static final int ARM_UD_MID = 0;
+    private static final int ARM_UD_LOW = -500;
+
+    private static final int ARM_EX_HIGH = -2000;
+    private static final int ARM_EX_MID = 0;
+    private static final int ARM_EX_LOW = -1000;
+
+
     private static final double ZERO_DELAY = 1.0; // Minimum delay in seconds between zeroing actions
 
     // Arm state flag
     private boolean armExZeroed = false;
+
+    private double selectedColor = 0.5; // Default to Purple (middle)
 
     @Override
     public void runOpMode() throws InterruptedException {
@@ -52,6 +64,8 @@ public class FullRobotControl extends LinearOpMode {
         servoIntakeRight = hardwareMap.get(CRServo.class, "intakeRight");
         servoMovingIntake = hardwareMap.get(Servo.class, "movingIntake");
         armExZeroSensor = hardwareMap.get(TouchSensor.class, "armExZeroSensor");
+        neoPixelServo = hardwareMap.get(Servo.class, "neoPixelServo");
+
 
         // Configure motor directions for driving
         motor1.setDirection(DcMotor.Direction.FORWARD);
@@ -102,8 +116,30 @@ public class FullRobotControl extends LinearOpMode {
         int armExTargetPosition = armEx.getCurrentPosition();
         int armUDTargetPosition = armUD.getCurrentPosition();
 
-        // Wait for the start signal
+        // Set default team color to Purple before INIT is pressed
+        neoPixelServo.setPosition(0.5);
+        telemetry.addData("Status", "Initialized - Defaulting to Purple");
+        telemetry.addData("Select Team", "Press A for Red, B for Blue");
+        telemetry.update();
+
+        // Team selection loop (update color until Start is pressed)
+        while (!isStarted()) {
+            if (gamepad1.a) {
+                selectedColor = 0.0; // Red Team
+            } else if (gamepad1.b) {
+                selectedColor = 1.0; // Blue Team
+            }
+            neoPixelServo.setPosition(selectedColor);
+            telemetry.addData("Selected Team", selectedColor == 0.0 ? "Red" : "Blue");
+            telemetry.update();
+        }
+
         waitForStart();
+
+        // Lock the selected team color for the match
+        neoPixelServo.setPosition(selectedColor);
+        telemetry.addData("Final Color", selectedColor == 0.0 ? "Red" : "Blue");
+        telemetry.update();
 
         while (opModeIsActive()) {
 
@@ -194,7 +230,29 @@ public class FullRobotControl extends LinearOpMode {
                     armUD.setPower(0.5);
                 }
 
-                // Intake mechanism controls (gamepad2)
+            if (gamepad2.right_stick_y < -0.5) {
+                armUD.setTargetPosition(ARM_UD_HIGH);
+                armEx.setTargetPosition(ARM_EX_HIGH);
+            } else if (gamepad2.right_stick_y > 0.5) {
+                armUD.setTargetPosition(ARM_UD_LOW);
+                armEx.setTargetPosition(ARM_EX_LOW);
+            } else {
+                armUD.setTargetPosition(ARM_UD_MID);
+                armEx.setTargetPosition(ARM_EX_MID);
+            }
+            armUD.setMode(DcMotor.RunMode.RUN_TO_POSITION);
+            armUD.setPower(0.5);
+            armEx.setMode(DcMotor.RunMode.RUN_TO_POSITION);
+            armEx.setPower(0.5);
+
+            double armExPower = gamepad2.right_trigger - gamepad2.left_trigger;
+
+            armUD.setMode(DcMotor.RunMode.RUN_USING_ENCODER);
+            armUD.setPower(armUDPower);
+            armEx.setMode(DcMotor.RunMode.RUN_USING_ENCODER);
+            armEx.setPower(armExPower * MAX_ARMEX_POWER);
+
+            // Intake mechanism controls (gamepad2)
                 if (gamepad2.a) {
                     servoIntakeLeft.setPower(1.0); // Intake forward
                     servoIntakeRight.setPower(-1.0); // Opposite direction
