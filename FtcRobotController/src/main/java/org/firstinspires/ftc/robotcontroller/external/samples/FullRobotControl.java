@@ -59,6 +59,11 @@ public class FullRobotControl extends LinearOpMode {
         motor3.setDirection(DcMotor.Direction.FORWARD);
         motor4.setDirection(DcMotor.Direction.REVERSE);
 
+        motor1.setZeroPowerBehavior(DcMotor.ZeroPowerBehavior.BRAKE);
+        motor2.setZeroPowerBehavior(DcMotor.ZeroPowerBehavior.BRAKE);
+        motor3.setZeroPowerBehavior(DcMotor.ZeroPowerBehavior.BRAKE);
+        motor4.setZeroPowerBehavior(DcMotor.ZeroPowerBehavior.BRAKE);
+
         // Reset and configure encoders for arm motors
         armUD.setMode(DcMotor.RunMode.STOP_AND_RESET_ENCODER);
         armUD.setMode(DcMotor.RunMode.RUN_USING_ENCODER);
@@ -208,7 +213,7 @@ public class FullRobotControl extends LinearOpMode {
 
                 // Moving intake servo controls (gamepad2)
                 double movingIntakePosition = gamepad2.left_bumper ? 0.1333 : (gamepad2.right_bumper ? 0.8333 : 0.5);
-                servoMovingIntake.setPosition(Range.clip(movingIntakePosition, 0.0, 1.0));
+                servoMovingIntake.setPosition(Range.clip(gamepad2.right_stick_y, 0.0, 1.0));
 
                 // Display telemetry data for debugging
                 telemetry.addData("Speed Mode", isSlowMode ? "Slow" : "Fast");
