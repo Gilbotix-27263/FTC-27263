@@ -135,7 +135,7 @@ public class FullRobotControl extends LinearOpMode {
         while (opModeIsActive()) {
 
             // Driving controls (Controller 1)
-            if (gamepad1.left_bumper && toggleTimer.seconds() > 0.5) {
+            if (gamepad1.right_bumper && toggleTimer.seconds() > 0.5) {
                 isSlowMode = !isSlowMode;
                 speedMultiplier = isSlowMode ? 0.3 : 1.0; // Toggle speed multiplier
                 toggleTimer.reset();
