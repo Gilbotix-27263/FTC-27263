@@ -10,7 +10,6 @@ import org.openftc.easyopencv.OpenCvCameraFactory;
 import org.openftc.easyopencv.OpenCvCameraRotation;
 import org.openftc.easyopencv.OpenCvPipeline;
 import org.firstinspires.ftc.robotcore.external.navigation.YawPitchRollAngles;
-
 import org.firstinspires.ftc.robotcore.external.navigation.AngleUnit;
 import org.opencv.core.*;
 import org.opencv.imgproc.Imgproc;
@@ -95,20 +94,17 @@ public class WebcamColorYaw extends LinearOpMode {
 
         @Override
         public Mat processFrame(Mat input) {
-            Mat hsvMat = new Mat();
-            Imgproc.cvtColor(input, hsvMat, Imgproc.COLOR_RGB2HSV);
+            Mat maskRed = new Mat();
+            Mat maskBlue = new Mat();
+            Mat maskYellow = new Mat();
 
-            Scalar lowerRed = new Scalar(100, 20, 30);
-            Scalar upperRed = new Scalar(255, 50, 50);
-            Scalar lowerBlue = new Scalar(30, 30, 100);
-            Scalar upperBlue = new Scalar(50, 50, 255);
-            Scalar lowerYellow = new Scalar(20, 100, 100);
-            Scalar upperYellow = new Scalar(30, 255, 255);
+            Core.inRange(input, new Scalar(100, 0, 0), new Scalar(255, 100, 100), maskRed); // Red Range
+            Core.inRange(input, new Scalar(0, 0, 100), new Scalar(100, 100, 255), maskBlue); // Blue Range
+            Core.inRange(input, new Scalar(0, 100, 100), new Scalar(100, 255, 255), maskYellow); // Yellow Range
 
             Mat mask = new Mat();
-            Core.inRange(hsvMat, lowerRed, upperRed, mask);
-            Core.inRange(hsvMat, lowerBlue, upperBlue, mask);
-            Core.inRange(hsvMat, lowerYellow, upperYellow, mask);
+            Core.bitwise_or(maskRed, maskBlue, mask);
+            Core.bitwise_or(mask, maskYellow, mask);
 
             Rect boundingRect = Imgproc.boundingRect(mask);
             Imgproc.rectangle(input, boundingRect.tl(), boundingRect.br(), new Scalar(0, 255, 0), 2);
@@ -122,8 +118,10 @@ public class WebcamColorYaw extends LinearOpMode {
                 orientationType = boundingRect.width > boundingRect.height ? "Horizontal" : "Vertical";
             }
 
+            maskRed.release();
+            maskBlue.release();
+            maskYellow.release();
             mask.release();
-            hsvMat.release();
             return input;
         }
 
