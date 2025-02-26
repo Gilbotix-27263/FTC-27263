@@ -14,15 +14,14 @@ import org.firstinspires.ftc.robotcore.external.navigation.YawPitchRollAngles;
 import org.firstinspires.ftc.robotcore.external.navigation.AngleUnit;
 import org.opencv.core.*;
 import org.opencv.imgproc.Imgproc;
-import java.util.ArrayList;
 
-@TeleOp(name = "Webcam Shape Yaw", group = "Main")
-public class WebcamShapeYaw extends LinearOpMode {
+@TeleOp(name = "Webcam Color Yaw", group = "Main")
+public class WebcamColorYaw extends LinearOpMode {
     private OpenCvCamera webcam;
     private IMU imu;
     private Servo intake;
     private Servo intakelr;
-    private ShapeDetectionPipeline shapePipeline;
+    private ColorDetectionPipeline colorPipeline;
     private static final double CAMERA_FOV_DEGREES = 60.0;
 
     @Override
@@ -31,14 +30,12 @@ public class WebcamShapeYaw extends LinearOpMode {
         intake = hardwareMap.get(Servo.class, "intake");
         intakelr = hardwareMap.get(Servo.class, "intakelr");
 
-        intake.setPosition(0.0);
-
         int cameraMonitorViewId = hardwareMap.appContext.getResources().getIdentifier(
                 "cameraMonitorViewId", "id", hardwareMap.appContext.getPackageName());
         webcam = OpenCvCameraFactory.getInstance().createWebcam(
                 hardwareMap.get(WebcamName.class, "Webcam 1"), cameraMonitorViewId);
-        shapePipeline = new ShapeDetectionPipeline();
-        webcam.setPipeline(shapePipeline);
+        colorPipeline = new ColorDetectionPipeline();
+        webcam.setPipeline(colorPipeline);
 
         webcam.openCameraDeviceAsync(new OpenCvCamera.AsyncCameraOpenListener() {
             @Override
@@ -62,10 +59,12 @@ public class WebcamShapeYaw extends LinearOpMode {
             YawPitchRollAngles orientation = imu.getRobotYawPitchRollAngles();
             double robotYaw = orientation.getYaw(AngleUnit.DEGREES);
 
-            double sampleYawOffset = shapePipeline.getSampleYawOffset();
+            String detectedColor = colorPipeline.getDetectedColor();
+            double sampleYawOffset = colorPipeline.getSampleYawOffset();
             double sampleYaw = robotYaw + sampleYawOffset;
-            String orientationType = shapePipeline.getOrientationType();
+            String orientationType = colorPipeline.getOrientationType();
 
+            telemetry.addData("Detected Color", detectedColor);
             telemetry.addData("Sample Yaw Offset", "%.2f degrees", sampleYawOffset);
             telemetry.addData("Sample Yaw", "%.2f degrees", sampleYaw);
             telemetry.addData("Object Orientation", orientationType);
@@ -73,58 +72,63 @@ public class WebcamShapeYaw extends LinearOpMode {
 
             if (Math.abs(sampleYawOffset) < 5) { // Sample is centered
                 if ("Vertical".equals(orientationType)) {
-                    intake.setPosition(1.0);
-                } else if ("Horizontal".equals(orientationType)) {
+                    intake.setPosition(1.0); // Close intake
+                } else if ("Horizontal".equals(orientationType)){
                     intake.setPosition(0);
-                    intakelr.setPosition(1.0);
-                    sleep(500);
-                    intakelr.setPosition(0.5);
-                    intake.setPosition(1.0);
-                } else {
+                    intakelr.setPosition(1.0); // Rotate until vertical
+                    sleep(500); // Allow time for rotation
+                    intakelr.setPosition(0.5); // Stop rotation
+                    intake.setPosition(1.0); // Close intake
+                }
+                else {
                     intake.setPosition(0);
                 }
             }
         }
     }
 
-    static class ShapeDetectionPipeline extends OpenCvPipeline {
+    static class ColorDetectionPipeline extends OpenCvPipeline {
+        private String detectedColor = "None";
         private double sampleYawOffset = 0.0;
         private static final int FRAME_WIDTH = 640;
         private String orientationType = "Unknown";
 
         @Override
         public Mat processFrame(Mat input) {
-            Mat grayMat = new Mat();
-            Imgproc.cvtColor(input, grayMat, Imgproc.COLOR_RGB2GRAY);
-            Imgproc.GaussianBlur(grayMat, grayMat, new Size(5, 5), 0);
-            Imgproc.Canny(grayMat, grayMat, 50, 150);
+            Mat hsvMat = new Mat();
+            Imgproc.cvtColor(input, hsvMat, Imgproc.COLOR_RGB2HSV);
 
-            ArrayList<MatOfPoint> contours = new ArrayList<>();
-            Mat hierarchy = new Mat();
-            Imgproc.findContours(grayMat, contours, hierarchy, Imgproc.RETR_EXTERNAL, Imgproc.CHAIN_APPROX_SIMPLE);
+            Scalar lowerRed = new Scalar(100, 20, 30);
+            Scalar upperRed = new Scalar(255, 50, 50);
+            Scalar lowerBlue = new Scalar(30, 30, 100);
+            Scalar upperBlue = new Scalar(50, 50, 255);
+            Scalar lowerYellow = new Scalar(20, 100, 100);
+            Scalar upperYellow = new Scalar(30, 255, 255);
 
-            if (!contours.isEmpty()) {
-                MatOfPoint largestContour = contours.get(0);
-                double maxArea = Imgproc.contourArea(largestContour);
+            Mat mask = new Mat();
+            Core.inRange(hsvMat, lowerRed, upperRed, mask);
+            Core.inRange(hsvMat, lowerBlue, upperBlue, mask);
+            Core.inRange(hsvMat, lowerYellow, upperYellow, mask);
 
-                for (MatOfPoint contour : contours) {
-                    double area = Imgproc.contourArea(contour);
-                    if (area > maxArea) {
-                        maxArea = area;
-                        largestContour = contour;
-                    }
-                }
+            Rect boundingRect = Imgproc.boundingRect(mask);
+            Imgproc.rectangle(input, boundingRect.tl(), boundingRect.br(), new Scalar(0, 255, 0), 2);
+            Imgproc.putText(input, detectedColor, new Point(boundingRect.x, boundingRect.y - 10),
+                    Imgproc.FONT_HERSHEY_SIMPLEX, 0.5, new Scalar(255, 255, 255), 2);
 
-                Rect boundingRect = Imgproc.boundingRect(largestContour);
-                Imgproc.rectangle(input, boundingRect.tl(), boundingRect.br(), new Scalar(0, 255, 0), 2);
+            if (boundingRect.width > 0 && boundingRect.height > 0) {
                 double centerX = boundingRect.x + (boundingRect.width / 2.0);
                 double normalizedX = (centerX - (FRAME_WIDTH / 2.0)) / (FRAME_WIDTH / 2.0);
                 sampleYawOffset = normalizedX * (CAMERA_FOV_DEGREES / 2.0);
                 orientationType = boundingRect.width > boundingRect.height ? "Horizontal" : "Vertical";
             }
 
-            grayMat.release();
+            mask.release();
+            hsvMat.release();
             return input;
+        }
+
+        public String getDetectedColor() {
+            return detectedColor;
         }
 
         public double getSampleYawOffset() {
