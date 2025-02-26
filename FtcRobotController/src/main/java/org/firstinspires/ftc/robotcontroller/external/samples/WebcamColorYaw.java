@@ -30,9 +30,6 @@ public class WebcamColorYaw extends LinearOpMode {
         intake = hardwareMap.get(Servo.class, "intake");
         intakelr = hardwareMap.get(Servo.class, "intakelr");
 
-        // Set intake servo to initial position (open)
-        intake.setPosition(0.0);
-
         int cameraMonitorViewId = hardwareMap.appContext.getResources().getIdentifier(
                 "cameraMonitorViewId", "id", hardwareMap.appContext.getPackageName());
         webcam = OpenCvCameraFactory.getInstance().createWebcam(
@@ -76,11 +73,15 @@ public class WebcamColorYaw extends LinearOpMode {
             if (Math.abs(sampleYawOffset) < 5) { // Sample is centered
                 if ("Vertical".equals(orientationType)) {
                     intake.setPosition(1.0); // Close intake
-                } else {
+                } else if ("Horizontal".equals(orientationType)){
+                    intake.setPosition(0);
                     intakelr.setPosition(1.0); // Rotate until vertical
                     sleep(500); // Allow time for rotation
                     intakelr.setPosition(0.5); // Stop rotation
                     intake.setPosition(1.0); // Close intake
+                }
+                else {
+                    intake.setPosition(0);
                 }
             }
         }
@@ -118,12 +119,7 @@ public class WebcamColorYaw extends LinearOpMode {
                 double centerX = boundingRect.x + (boundingRect.width / 2.0);
                 double normalizedX = (centerX - (FRAME_WIDTH / 2.0)) / (FRAME_WIDTH / 2.0);
                 sampleYawOffset = normalizedX * (CAMERA_FOV_DEGREES / 2.0);
-
-                if (boundingRect.width > boundingRect.height) {
-                    orientationType = "Horizontal";
-                } else {
-                    orientationType = "Vertical";
-                }
+                orientationType = boundingRect.width > boundingRect.height ? "Horizontal" : "Vertical";
             }
 
             mask.release();
