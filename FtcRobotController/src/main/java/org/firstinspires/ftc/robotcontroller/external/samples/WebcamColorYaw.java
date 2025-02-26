@@ -94,21 +94,24 @@ public class WebcamColorYaw extends LinearOpMode {
 
         @Override
         public Mat processFrame(Mat input) {
+            Mat rgbMat = new Mat();
+            Imgproc.cvtColor(input, rgbMat, Imgproc.COLOR_BGR2RGB); // Convert BGR to RGB
+
             Mat maskRed = new Mat();
             Mat maskBlue = new Mat();
             Mat maskYellow = new Mat();
 
-            Core.inRange(input, new Scalar(100, 0, 0), new Scalar(255, 100, 100), maskRed); // Red Range
-            Core.inRange(input, new Scalar(0, 0, 100), new Scalar(100, 100, 255), maskBlue); // Blue Range
-            Core.inRange(input, new Scalar(0, 100, 100), new Scalar(100, 255, 255), maskYellow); // Yellow Range
+            Core.inRange(rgbMat, new Scalar(150, 0, 0), new Scalar(255, 100, 100), maskRed); // Red Range
+            Core.inRange(rgbMat, new Scalar(0, 0, 150), new Scalar(100, 100, 255), maskBlue); // Blue Range
+            Core.inRange(rgbMat, new Scalar(150, 150, 0), new Scalar(255, 255, 100), maskYellow); // Yellow Range
 
             Mat mask = new Mat();
             Core.bitwise_or(maskRed, maskBlue, mask);
             Core.bitwise_or(mask, maskYellow, mask);
 
             Rect boundingRect = Imgproc.boundingRect(mask);
-            Imgproc.rectangle(input, boundingRect.tl(), boundingRect.br(), new Scalar(0, 255, 0), 2);
-            Imgproc.putText(input, detectedColor, new Point(boundingRect.x, boundingRect.y - 10),
+            Imgproc.rectangle(rgbMat, boundingRect.tl(), boundingRect.br(), new Scalar(0, 255, 0), 2);
+            Imgproc.putText(rgbMat, detectedColor, new Point(boundingRect.x, boundingRect.y - 10),
                     Imgproc.FONT_HERSHEY_SIMPLEX, 0.5, new Scalar(255, 255, 255), 2);
 
             if (boundingRect.width > 0 && boundingRect.height > 0) {
@@ -122,6 +125,7 @@ public class WebcamColorYaw extends LinearOpMode {
             maskBlue.release();
             maskYellow.release();
             mask.release();
+            rgbMat.release();
             return input;
         }
 
