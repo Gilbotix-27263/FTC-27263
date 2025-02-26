@@ -1,5 +1,6 @@
 package org.firstinspires.ftc.robotcontroller.external.samples;
 
+import com.acmerobotics.dashboard.FtcDashboard;
 import com.qualcomm.robotcore.eventloop.opmode.LinearOpMode;
 import com.qualcomm.robotcore.eventloop.opmode.TeleOp;
 import com.qualcomm.robotcore.hardware.IMU;
@@ -39,6 +40,7 @@ public class WebcamColorYaw extends LinearOpMode {
                 hardwareMap.get(WebcamName.class, "Webcam 1"), cameraMonitorViewId);
         colorPipeline = new ColorDetectionPipeline();
         webcam.setPipeline(colorPipeline);
+        FtcDashboard.getInstance().startCameraStream(webcam, 60);
 
         webcam.openCameraDeviceAsync(new OpenCvCamera.AsyncCameraOpenListener() {
             @Override
@@ -76,14 +78,13 @@ public class WebcamColorYaw extends LinearOpMode {
             if (Math.abs(sampleYawOffset) < 5) { // Sample is centered
                 if ("Vertical".equals(orientationType)) {
                     intake.setPosition(1.0); // Close intake
-                } else if ("Horizontal".equals(orientationType)){
+                } else if ("Horizontal".equals(orientationType)) {
                     intake.setPosition(0);
                     intakelr.setPosition(1.0); // Rotate until vertical
                     sleep(500); // Allow time for rotation
                     intakelr.setPosition(0.5); // Stop rotation
                     intake.setPosition(1.0); // Close intake
-                }
-                else {
+                } else {
                     intake.setPosition(0);
                 }
             }
@@ -110,7 +111,7 @@ public class WebcamColorYaw extends LinearOpMode {
         private static final double PIXELS_PER_INCH = FRAME_WIDTH / (2 * Math.tan(Math.toRadians(CAMERA_FOV_DEGREES / 2)) * SAMPLE_WIDTH_INCHES);
         private static final double EXPECTED_SAMPLE_WIDTH_PX = SAMPLE_WIDTH_INCHES * PIXELS_PER_INCH;
         private static final double EXPECTED_SAMPLE_HEIGHT_PX = SAMPLE_HEIGHT_INCHES * PIXELS_PER_INCH;
-        private static final double SIZE_TOLERANCE = 0.2; // Allow 20% tolerance for size detection
+        private static final double SIZE_TOLERANCE = 0.5; // Allow 50% tolerance for size detection (adjust as needed)
 
         @Override
         public Mat processFrame(Mat input) {
@@ -138,6 +139,11 @@ public class WebcamColorYaw extends LinearOpMode {
             Mat combinedMask = new Mat();
             Core.bitwise_or(redMask, blueMask, combinedMask);
             Core.bitwise_or(combinedMask, yellowMask, combinedMask);
+
+            // Preprocess the mask to reduce noise
+            Mat kernel = Imgproc.getStructuringElement(Imgproc.MORPH_RECT, new Size(5, 5));
+            Imgproc.morphologyEx(combinedMask, combinedMask, Imgproc.MORPH_OPEN, kernel);
+            Imgproc.morphologyEx(combinedMask, combinedMask, Imgproc.MORPH_CLOSE, kernel);
 
             // Find contours in the combined mask
             Mat contoursMat = new Mat();
