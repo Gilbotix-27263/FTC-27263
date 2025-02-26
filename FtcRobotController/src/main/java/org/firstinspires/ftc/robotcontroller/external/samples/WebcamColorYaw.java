@@ -13,6 +13,7 @@ import org.firstinspires.ftc.robotcore.external.navigation.YawPitchRollAngles;
 import org.firstinspires.ftc.robotcore.external.navigation.AngleUnit;
 import org.opencv.core.*;
 import org.opencv.imgproc.Imgproc;
+import java.util.ArrayList;
 
 @TeleOp(name = "Webcam Color Yaw", group = "Main")
 public class WebcamColorYaw extends LinearOpMode {
@@ -101,20 +102,32 @@ public class WebcamColorYaw extends LinearOpMode {
             Mat maskBlue = new Mat();
             Mat maskYellow = new Mat();
 
-            Core.inRange(rgbMat, new Scalar(150, 0, 0), new Scalar(255, 100, 100), maskRed); // Red Range
-            Core.inRange(rgbMat, new Scalar(0, 0, 150), new Scalar(100, 100, 255), maskBlue); // Blue Range
-            Core.inRange(rgbMat, new Scalar(150, 150, 0), new Scalar(255, 255, 100), maskYellow); // Yellow Range
+            Core.inRange(rgbMat, new Scalar(200, 0, 0), new Scalar(255, 80, 80), maskRed); // Red Range
+            Core.inRange(rgbMat, new Scalar(0, 0, 200), new Scalar(80, 80, 255), maskBlue); // Blue Range
+            Core.inRange(rgbMat, new Scalar(180, 180, 0), new Scalar(255, 255, 100), maskYellow); // Yellow Range
 
             Mat mask = new Mat();
             Core.bitwise_or(maskRed, maskBlue, mask);
             Core.bitwise_or(mask, maskYellow, mask);
 
-            Rect boundingRect = Imgproc.boundingRect(mask);
-            Imgproc.rectangle(rgbMat, boundingRect.tl(), boundingRect.br(), new Scalar(0, 255, 0), 2);
-            Imgproc.putText(rgbMat, detectedColor, new Point(boundingRect.x, boundingRect.y - 10),
-                    Imgproc.FONT_HERSHEY_SIMPLEX, 0.5, new Scalar(255, 255, 255), 2);
+            ArrayList<MatOfPoint> contours = new ArrayList<>();
+            Mat hierarchy = new Mat();
+            Imgproc.findContours(mask, contours, hierarchy, Imgproc.RETR_EXTERNAL, Imgproc.CHAIN_APPROX_SIMPLE);
 
-            if (boundingRect.width > 0 && boundingRect.height > 0) {
+            if (!contours.isEmpty()) {
+                MatOfPoint largestContour = contours.get(0);
+                double maxArea = Imgproc.contourArea(largestContour);
+
+                for (MatOfPoint contour : contours) {
+                    double area = Imgproc.contourArea(contour);
+                    if (area > maxArea) {
+                        maxArea = area;
+                        largestContour = contour;
+                    }
+                }
+
+                Rect boundingRect = Imgproc.boundingRect(largestContour);
+                Imgproc.rectangle(rgbMat, boundingRect.tl(), boundingRect.br(), new Scalar(0, 255, 0), 2);
                 double centerX = boundingRect.x + (boundingRect.width / 2.0);
                 double normalizedX = (centerX - (FRAME_WIDTH / 2.0)) / (FRAME_WIDTH / 2.0);
                 sampleYawOffset = normalizedX * (CAMERA_FOV_DEGREES / 2.0);
