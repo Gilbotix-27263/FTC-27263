@@ -1,5 +1,6 @@
 package org.firstinspires.ftc.robotcontroller.external.samples;
 
+import com.acmerobotics.dashboard.FtcDashboard;
 import com.qualcomm.robotcore.eventloop.opmode.LinearOpMode;
 import com.qualcomm.robotcore.eventloop.opmode.TeleOp;
 import com.qualcomm.robotcore.hardware.IMU;
@@ -39,6 +40,7 @@ public class WebcamColorYaw extends LinearOpMode {
                 hardwareMap.get(WebcamName.class, "Webcam 1"), cameraMonitorViewId);
         colorPipeline = new ColorDetectionPipeline();
         webcam.setPipeline(colorPipeline);
+        FtcDashboard.getInstance().startCameraStream(webcam, 60);
 
         webcam.openCameraDeviceAsync(new OpenCvCamera.AsyncCameraOpenListener() {
             @Override
