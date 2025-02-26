@@ -5,6 +5,7 @@ import com.qualcomm.robotcore.eventloop.opmode.TeleOp;
 import com.qualcomm.robotcore.hardware.IMU;
 
 import org.firstinspires.ftc.robotcore.external.hardware.camera.WebcamName;
+import org.opencv.imgproc.Moments;
 import org.openftc.easyopencv.OpenCvCamera;
 import org.openftc.easyopencv.OpenCvCameraFactory;
 import org.openftc.easyopencv.OpenCvCameraRotation;
@@ -15,6 +16,7 @@ import org.opencv.core.Core;
 import org.opencv.core.Mat;
 import org.opencv.core.Scalar;
 import org.opencv.core.Rect;
+
 import org.opencv.imgproc.Imgproc;
 
 @TeleOp(name = "Webcam Color Yaw", group = "Main")
@@ -22,7 +24,7 @@ public class WebcamColorYaw extends LinearOpMode {
     private OpenCvCamera webcam;
     private IMU imu;
     private ColorDetectionPipeline colorPipeline;
-    private static final double CAMERA_FOV_DEGREES = 60.0;
+    private static final double CAMERA_FOV_DEGREES = 60.0; // Update with your camera's FOV
 
     @Override
     public void runOpMode() {
@@ -42,6 +44,7 @@ public class WebcamColorYaw extends LinearOpMode {
             public void onOpened() {
                 webcam.startStreaming(640, 480, OpenCvCameraRotation.UPRIGHT);
             }
+
             @Override
             public void onError(int errorCode) {
                 telemetry.addData("Camera Error", errorCode);
@@ -59,12 +62,14 @@ public class WebcamColorYaw extends LinearOpMode {
             YawPitchRollAngles orientation = imu.getRobotYawPitchRollAngles();
             double robotYaw = orientation.getYaw(AngleUnit.DEGREES);
 
-            // Get detected color and its x-position
+            // Get detected color and its yaw offset
             String detectedColor = colorPipeline.getDetectedColor();
-            double sampleYaw = robotYaw + colorPipeline.getSampleYawOffset();
+            double sampleYawOffset = colorPipeline.getSampleYawOffset();
+            double sampleYaw = robotYaw + sampleYawOffset;
 
             // Display telemetry
             telemetry.addData("Detected Color", detectedColor);
+            telemetry.addData("Sample Yaw Offset", "%.2f degrees", sampleYawOffset);
             telemetry.addData("Sample Yaw", "%.2f degrees", sampleYaw);
             telemetry.update();
         }
@@ -87,45 +92,41 @@ public class WebcamColorYaw extends LinearOpMode {
             Scalar lowerYellow = new Scalar(20, 100, 100);
             Scalar upperYellow = new Scalar(30, 255, 255);
 
-            Mat redMask = new Mat();
-            Mat blueMask = new Mat();
-            Mat yellowMask = new Mat();
-
-            Core.inRange(hsvMat, lowerRed, upperRed, redMask);
-            Core.inRange(hsvMat, lowerBlue, upperBlue, blueMask);
-            Core.inRange(hsvMat, lowerYellow, upperYellow, yellowMask);
-
-            int redCount = Core.countNonZero(redMask);
-            int blueCount = Core.countNonZero(blueMask);
-            int yellowCount = Core.countNonZero(yellowMask);
+            Mat mask = new Mat();
+            Core.inRange(hsvMat, lowerRed, upperRed, mask);
+            int redCount = Core.countNonZero(mask);
+            Core.inRange(hsvMat, lowerBlue, upperBlue, mask);
+            int blueCount = Core.countNonZero(mask);
+            Core.inRange(hsvMat, lowerYellow, upperYellow, mask);
+            int yellowCount = Core.countNonZero(mask);
 
             if (redCount > blueCount && redCount > yellowCount) {
                 detectedColor = "Red";
-                sampleYawOffset = calculateYawOffset(redMask);
+                sampleYawOffset = calculateYawOffset(mask);
             } else if (blueCount > redCount && blueCount > yellowCount) {
                 detectedColor = "Blue";
-                sampleYawOffset = calculateYawOffset(blueMask);
+                sampleYawOffset = calculateYawOffset(mask);
             } else if (yellowCount > redCount && yellowCount > blueCount) {
                 detectedColor = "Yellow";
-                sampleYawOffset = calculateYawOffset(yellowMask);
+                sampleYawOffset = calculateYawOffset(mask);
             } else {
                 detectedColor = "None";
                 sampleYawOffset = 0.0;
             }
 
-            redMask.release();
-            blueMask.release();
-            yellowMask.release();
+            mask.release();
             hsvMat.release();
-
             return input;
         }
 
         private double calculateYawOffset(Mat mask) {
-            Rect boundingRect = Imgproc.boundingRect(mask);
-            double centerX = boundingRect.x + (boundingRect.width / 2.0);
-            double normalizedX = (centerX - (FRAME_WIDTH / 2.0)) / (FRAME_WIDTH / 2.0);
-            return normalizedX * (CAMERA_FOV_DEGREES / 2.0);
+            Moments moments = Imgproc.moments(mask);
+            if (moments.get_m00() != 0) {
+                double centerX = moments.get_m10() / moments.get_m00();
+                double normalizedX = (centerX - (FRAME_WIDTH / 2.0)) / (FRAME_WIDTH / 2.0);
+                return normalizedX * (CAMERA_FOV_DEGREES / 2.0);
+            }
+            return 0.0;
         }
 
         public String getDetectedColor() {
