@@ -23,6 +23,8 @@ public class WebcamColorYaw extends LinearOpMode {
     private Servo intakelr;
     private ColorDetectionPipeline colorPipeline;
     private static final double CAMERA_FOV_DEGREES = 60.0;
+    private static final int FRAME_CENTER_X = 320; // Middle of 640 width frame
+    private static final int CENTER_TOLERANCE = 20; // Tolerance in pixels
 
     @Override
     public void runOpMode() {
@@ -56,21 +58,18 @@ public class WebcamColorYaw extends LinearOpMode {
         waitForStart();
 
         while (opModeIsActive()) {
-            YawPitchRollAngles orientation = imu.getRobotYawPitchRollAngles();
-            double robotYaw = orientation.getYaw(AngleUnit.DEGREES);
-
             String detectedColor = colorPipeline.getDetectedColor();
-            double sampleYawOffset = colorPipeline.getSampleYawOffset();
-            double sampleYaw = robotYaw + sampleYawOffset;
             String orientationType = colorPipeline.getOrientationType();
+            int sampleX = colorPipeline.getSampleXPosition();
+            int sampleY = colorPipeline.getSampleYPosition();
 
             telemetry.addData("Detected Color", detectedColor);
-            telemetry.addData("Sample Yaw Offset", "%.2f degrees", sampleYawOffset);
-            telemetry.addData("Sample Yaw", "%.2f degrees", sampleYaw);
             telemetry.addData("Object Orientation", orientationType);
+            telemetry.addData("Sample X Position", sampleX);
+            telemetry.addData("Sample Y Position", sampleY);
             telemetry.update();
 
-            if (Math.abs(sampleYawOffset) < 5) { // Sample is centered
+            if (Math.abs(sampleX - FRAME_CENTER_X) <= CENTER_TOLERANCE) { // Sample is centered
                 if ("Vertical".equals(orientationType)) {
                     intake.setPosition(1.0); // Close intake
                 } else {
@@ -85,9 +84,10 @@ public class WebcamColorYaw extends LinearOpMode {
 
     static class ColorDetectionPipeline extends OpenCvPipeline {
         private String detectedColor = "None";
-        private double sampleYawOffset = 0.0;
         private static final int FRAME_WIDTH = 640;
         private String orientationType = "Unknown";
+        private int sampleXPosition = -1;
+        private int sampleYPosition = -1;
 
         @Override
         public Mat processFrame(Mat input) {
@@ -110,11 +110,13 @@ public class WebcamColorYaw extends LinearOpMode {
             Imgproc.rectangle(input, boundingRect.tl(), boundingRect.br(), new Scalar(0, 255, 0), 2);
             Imgproc.putText(input, detectedColor, new Point(boundingRect.x, boundingRect.y - 10),
                     Imgproc.FONT_HERSHEY_SIMPLEX, 0.5, new Scalar(255, 255, 255), 2);
+            Imgproc.putText(input, "X: " + boundingRect.x + " Y: " + boundingRect.y,
+                    new Point(boundingRect.x, boundingRect.y + boundingRect.height + 20),
+                    Imgproc.FONT_HERSHEY_SIMPLEX, 0.5, new Scalar(255, 255, 255), 2);
 
             if (boundingRect.width > 0 && boundingRect.height > 0) {
-                double centerX = boundingRect.x + (boundingRect.width / 2.0);
-                double normalizedX = (centerX - (FRAME_WIDTH / 2.0)) / (FRAME_WIDTH / 2.0);
-                sampleYawOffset = normalizedX * (CAMERA_FOV_DEGREES / 2.0);
+                sampleXPosition = boundingRect.x + (boundingRect.width / 2);
+                sampleYPosition = boundingRect.y + (boundingRect.height / 2);
                 orientationType = boundingRect.width > boundingRect.height ? "Horizontal" : "Vertical";
             }
 
@@ -127,12 +129,16 @@ public class WebcamColorYaw extends LinearOpMode {
             return detectedColor;
         }
 
-        public double getSampleYawOffset() {
-            return sampleYawOffset;
-        }
-
         public String getOrientationType() {
             return orientationType;
+        }
+
+        public int getSampleXPosition() {
+            return sampleXPosition;
+        }
+
+        public int getSampleYPosition() {
+            return sampleYPosition;
         }
     }
 }
