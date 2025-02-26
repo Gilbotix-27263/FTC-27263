@@ -10,7 +10,6 @@ import org.openftc.easyopencv.OpenCvCameraFactory;
 import org.openftc.easyopencv.OpenCvCameraRotation;
 import org.openftc.easyopencv.OpenCvPipeline;
 import org.firstinspires.ftc.robotcore.external.navigation.YawPitchRollAngles;
-
 import org.firstinspires.ftc.robotcore.external.navigation.AngleUnit;
 import org.opencv.core.*;
 import org.opencv.imgproc.Imgproc;
@@ -58,10 +57,12 @@ public class WebcamColorYaw extends LinearOpMode {
             String detectedColor = colorPipeline.getDetectedColor();
             double sampleYawOffset = colorPipeline.getSampleYawOffset();
             double sampleYaw = robotYaw + sampleYawOffset;
+            String orientationType = colorPipeline.getOrientationType();
 
             telemetry.addData("Detected Color", detectedColor);
             telemetry.addData("Sample Yaw Offset", "%.2f degrees", sampleYawOffset);
             telemetry.addData("Sample Yaw", "%.2f degrees", sampleYaw);
+            telemetry.addData("Object Orientation", orientationType);
             telemetry.update();
         }
     }
@@ -70,6 +71,7 @@ public class WebcamColorYaw extends LinearOpMode {
         private String detectedColor = "None";
         private double sampleYawOffset = 0.0;
         private static final int FRAME_WIDTH = 640;
+        private String orientationType = "Unknown";
 
         @Override
         public Mat processFrame(Mat input) {
@@ -97,6 +99,12 @@ public class WebcamColorYaw extends LinearOpMode {
                 double centerX = boundingRect.x + (boundingRect.width / 2.0);
                 double normalizedX = (centerX - (FRAME_WIDTH / 2.0)) / (FRAME_WIDTH / 2.0);
                 sampleYawOffset = normalizedX * (CAMERA_FOV_DEGREES / 2.0);
+
+                if (boundingRect.width > boundingRect.height) {
+                    orientationType = "Horizontal";
+                } else {
+                    orientationType = "Vertical";
+                }
             }
 
             mask.release();
@@ -110,6 +118,10 @@ public class WebcamColorYaw extends LinearOpMode {
 
         public double getSampleYawOffset() {
             return sampleYawOffset;
+        }
+
+        public String getOrientationType() {
+            return orientationType;
         }
     }
 }
