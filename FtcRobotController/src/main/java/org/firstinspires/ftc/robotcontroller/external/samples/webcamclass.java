@@ -18,7 +18,7 @@ import org.opencv.core.Scalar;
 import org.opencv.core.Rect;
 import org.opencv.imgproc.Imgproc;
 
-@TeleOp(name = "Webcam Color Yaw", group = "Main")
+@TeleOp(group = "Main")
 public class webcamclass extends LinearOpMode {
     private OpenCvCamera webcam;
     private IMU imu;
