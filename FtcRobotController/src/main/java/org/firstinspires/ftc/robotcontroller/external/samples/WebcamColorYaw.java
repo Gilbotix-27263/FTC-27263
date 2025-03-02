@@ -18,10 +18,8 @@ import org.opencv.core.*;
 import org.opencv.imgproc.Imgproc;
 
 import java.util.ArrayList;
-import java.util.HashMap;
 import java.util.LinkedList;
 import java.util.List;
-import java.util.Map;
 
 @TeleOp(name = "Webcam Color Yaw", group = "Main")
 public class WebcamColorYaw extends LinearOpMode {
@@ -29,7 +27,7 @@ public class WebcamColorYaw extends LinearOpMode {
     private IMU imu;
     private Servo intake;
     private Servo intakelr;
-    private ShapeDetectionPipeline colorPipeline;
+    private EnhancedShapeDetectionPipeline colorPipeline;
     private static final double CAMERA_FOV_DEGREES = 60.0;
 
     @Override
@@ -42,7 +40,7 @@ public class WebcamColorYaw extends LinearOpMode {
                 "cameraMonitorViewId", "id", hardwareMap.appContext.getPackageName());
         webcam = OpenCvCameraFactory.getInstance().createWebcam(
                 hardwareMap.get(WebcamName.class, "Webcam 1"), cameraMonitorViewId);
-        colorPipeline = new ShapeDetectionPipeline();
+        colorPipeline = new EnhancedShapeDetectionPipeline();
         webcam.setPipeline(colorPipeline);
         FtcDashboard.getInstance().startCameraStream(webcam, 60);
 
@@ -164,410 +162,357 @@ public class WebcamColorYaw extends LinearOpMode {
     }
 }
 
-    class ShapeDetectionPipeline extends OpenCvPipeline {
-        private String detectedElement = "None";
-        private double elementYawOffset = 0.0;
-        private static final int FRAME_WIDTH = 640;
-        private static final int FRAME_HEIGHT = 480;
-        private String orientationType = "Unknown";
-        private double confidence = 0.0;
+class EnhancedShapeDetectionPipeline extends OpenCvPipeline {
+    private String detectedElement = "None";
+    private double elementYawOffset = 0.0;
+    private static final int FRAME_WIDTH = 640;
+    private static final int FRAME_HEIGHT = 480;
+    private String orientationType = "Unknown";
+    private double confidence = 0.0;
 
-        // Visualization options
-        private boolean showDebugOverlay = true;
-        private Point lastDetectedCenter = null;
-        private Rect lastDetectedRect = null;
+    // Visualization parameters
+    private boolean showDebugOverlay = true;
+    private Point lastDetectedCenter = null;
+    private Rect lastDetectedRect = null;
 
-        // Detection highlight colors
-        private static final Scalar HIGHLIGHT_COLOR = new Scalar(0, 255, 0); // Green
-        private static final Scalar TARGET_LINE_COLOR = new Scalar(255, 0, 0); // Red
-        private static final Scalar TEXT_COLOR = new Scalar(255, 255, 255); // White
+    // Detection highlight colors
+    private static final Scalar HIGHLIGHT_COLOR = new Scalar(0, 255, 0); // Green
+    private static final Scalar TARGET_LINE_COLOR = new Scalar(255, 0, 0); // Red
+    private static final Scalar TEXT_COLOR = new Scalar(255, 255, 255); // White
 
-        // Camera parameters
-        private static final double CAMERA_FOV_DEGREES = 60.0; // Update this to match your camera's FOV
+    // Camera parameters
+    private static final double CAMERA_FOV_DEGREES = 60.0;
 
-        // Game element dimensions (in inches) - adjust to match your game elements
-        private static final double ELEMENT_WIDTH_INCHES = 3.5;
-        private static final double ELEMENT_HEIGHT_INCHES = 1.5;
+    // Game element dimensions (in inches)
+    private static final double ELEMENT_WIDTH_INCHES = 3.5;
+    private static final double ELEMENT_HEIGHT_INCHES = 1.5;
 
-        // Expected aspect ratios for different orientations
-        private static final double ASPECT_RATIO_HORIZONTAL = ELEMENT_WIDTH_INCHES / ELEMENT_HEIGHT_INCHES;
-        private static final double ASPECT_RATIO_VERTICAL = ELEMENT_HEIGHT_INCHES / ELEMENT_WIDTH_INCHES;
-        private static final double ASPECT_RATIO_TOLERANCE = 0.5;
+    // Expected aspect ratios for different orientations
+    private static final double ASPECT_RATIO_HORIZONTAL = ELEMENT_WIDTH_INCHES / ELEMENT_HEIGHT_INCHES;
+    private static final double ASPECT_RATIO_VERTICAL = ELEMENT_HEIGHT_INCHES / ELEMENT_WIDTH_INCHES;
+    private static final double ASPECT_RATIO_TOLERANCE = 0.5;
 
-        // Tracking history for stable detection
-        private static final int DETECTION_HISTORY_SIZE = 5;
-        private final LinkedList<String> elementHistory = new LinkedList<>();
-        private final LinkedList<String> orientationHistory = new LinkedList<>();
-        private final LinkedList<Rect> rectHistory = new LinkedList<>();
+    // Tracking history for stable detection
+    private static final int DETECTION_HISTORY_SIZE = 10;
+    private final LinkedList<String> elementHistory = new LinkedList<>();
+    private final LinkedList<String> orientationHistory = new LinkedList<>();
+    private final LinkedList<Point> centerHistory = new LinkedList<>();
 
-        // Detection parameters
-        private static final double MIN_CONTOUR_AREA = 500;
-        private static final double MAX_CONTOUR_AREA = FRAME_WIDTH * FRAME_HEIGHT / 4; // Max 1/4 of frame
+    // Detection parameters
+    private static final double MIN_CONTOUR_AREA = 400;
+    private static final double MAX_CONTOUR_AREA = FRAME_WIDTH * FRAME_HEIGHT / 4;
 
-        // Frame counters for FPS calculation
-        private int frameCount = 0;
-        private long lastFpsTimestamp = System.currentTimeMillis();
-        private double fps = 0;
+    // Animation parameters for highlight effect
+    private int highlightThickness = 2;
+    private int animationDirection = 1;
+    private static final int MIN_HIGHLIGHT_THICKNESS = 2;
+    private static final int MAX_HIGHLIGHT_THICKNESS = 5;
 
-        // Animation parameters for highlight effect
-        private int highlightThickness = 2;
-        private int animationDirection = 1;
-        private static final int MIN_HIGHLIGHT_THICKNESS = 2;
-        private static final int MAX_HIGHLIGHT_THICKNESS = 5;
+    // HSV color ranges for game element - adjust based on your game elements
+    private static final Scalar LOWER_COLOR = new Scalar(20, 100, 100);   // Lower HSV bound
+    private static final Scalar UPPER_COLOR = new Scalar(30, 255, 255);   // Upper HSV bound
 
-        @Override
-        public Mat processFrame(Mat input) {
-            // Create working matrices
-            Mat grayMat = new Mat();
-            Mat blurredMat = new Mat();
-            Mat thresholdMat = new Mat();
-            Mat cannyOutput = new Mat();
-            Mat hierarchy = new Mat();
+    @Override
+    public Mat processFrame(Mat input) {
+        // Create working matrices
+        Mat hsvMat = new Mat();
+        Mat colorMask = new Mat();
+        Mat blurredMat = new Mat();
+        Mat hierarchy = new Mat();
 
-            // Convert to grayscale for better shape detection
-            Imgproc.cvtColor(input, grayMat, Imgproc.COLOR_RGB2GRAY);
+        // Convert to HSV color space for better color detection
+        Imgproc.cvtColor(input, hsvMat, Imgproc.COLOR_RGB2HSV);
 
-            // Apply blur to reduce noise
-            Imgproc.GaussianBlur(grayMat, blurredMat, new Size(5, 5), 0);
+        // Filter for game element color
+        Core.inRange(hsvMat, LOWER_COLOR, UPPER_COLOR, colorMask);
 
-            // Apply adaptive threshold to handle varying lighting conditions
-            Imgproc.adaptiveThreshold(blurredMat, thresholdMat, 255,
-                    Imgproc.ADAPTIVE_THRESH_GAUSSIAN_C, Imgproc.THRESH_BINARY_INV, 11, 2);
+        // Apply blur to reduce noise
+        Imgproc.GaussianBlur(colorMask, blurredMat, new Size(5, 5), 0);
 
-            // Apply morphological operations to clean up the image
-            Mat kernel = Imgproc.getStructuringElement(Imgproc.MORPH_RECT, new Size(3, 3));
-            Imgproc.morphologyEx(thresholdMat, thresholdMat, Imgproc.MORPH_CLOSE, kernel);
-            Imgproc.morphologyEx(thresholdMat, thresholdMat, Imgproc.MORPH_OPEN, kernel);
+        // Apply morphological operations to clean up the image
+        Mat kernel = Imgproc.getStructuringElement(Imgproc.MORPH_RECT, new Size(3, 3));
+        Imgproc.morphologyEx(blurredMat, blurredMat, Imgproc.MORPH_CLOSE, kernel, new Point(-1, -1), 2);
+        Imgproc.morphologyEx(blurredMat, blurredMat, Imgproc.MORPH_OPEN, kernel);
 
-            // Find edges
-            Imgproc.Canny(thresholdMat, cannyOutput, 50, 150);
+        // Find contours
+        List<MatOfPoint> contours = new ArrayList<>();
+        Imgproc.findContours(blurredMat, contours, hierarchy, Imgproc.RETR_EXTERNAL, Imgproc.CHAIN_APPROX_SIMPLE);
 
-            // Find contours
-            List<MatOfPoint> contours = new ArrayList<>();
-            Imgproc.findContours(cannyOutput, contours, hierarchy,
-                    Imgproc.RETR_EXTERNAL, Imgproc.CHAIN_APPROX_SIMPLE);
+        // Sort contours by area (largest first)
+        contours.sort((c1, c2) -> Double.compare(Imgproc.contourArea(c2), Imgproc.contourArea(c1)));
 
-            // Sort contours by area (largest first)
-            contours.sort((c1, c2) -> Double.compare(Imgproc.contourArea(c2), Imgproc.contourArea(c1)));
+        String currentDetectedElement = "None";
+        String currentOrientation = "Unknown";
+        double currentConfidence = 0.0;
+        boolean validDetection = false;
+        Rect currentRect = null;
+        Point currentCenter = null;
 
-            String currentDetectedElement = "None";
-            String currentOrientation = "Unknown";
-            double currentConfidence = 0.0;
-            boolean validDetection = false;
-            Rect currentRect = null;
-            Point currentCenter = null;
+        // Process contours to find game elements
+        for (MatOfPoint contour : contours) {
+            double area = Imgproc.contourArea(contour);
 
-            // Process contours to find game elements
-            for (MatOfPoint contour : contours) {
-                double area = Imgproc.contourArea(contour);
-
-                // Skip if contour is too small or too large
-                if (area < MIN_CONTOUR_AREA || area > MAX_CONTOUR_AREA) {
-                    continue;
-                }
-
-                // Approximate the contour with a polygon
-                MatOfPoint2f contour2f = new MatOfPoint2f(contour.toArray());
-                MatOfPoint2f approxCurve = new MatOfPoint2f();
-                double epsilon = 0.04 * Imgproc.arcLength(contour2f, true);
-                Imgproc.approxPolyDP(contour2f, approxCurve, epsilon, true);
-
-                // Get the number of vertices in the polygon
-                int vertices = (int) approxCurve.total();
-
-                // Get bounding rectangle
-                Rect boundingRect = Imgproc.boundingRect(contour);
-
-                // Calculate the aspect ratio
-                double aspectRatio = (double) boundingRect.width / boundingRect.height;
-
-                // Determine shape and orientation
-                if (vertices >= 4 && vertices <= 8) {
-                    // Calculate how rectangular it is using solidity
-                    double rectArea = boundingRect.width * boundingRect.height;
-                    double solidity = area / rectArea;
-
-                    if (solidity > 0.7) {
-                        // Likely a rectangle or square (game element)
-
-                        // Check orientation based on aspect ratio
-                        boolean isHorizontal = Math.abs(aspectRatio - ASPECT_RATIO_HORIZONTAL) < ASPECT_RATIO_TOLERANCE;
-                        boolean isVertical = Math.abs(aspectRatio - ASPECT_RATIO_VERTICAL) < ASPECT_RATIO_TOLERANCE;
-
-                        if (isHorizontal) {
-                            currentOrientation = "Horizontal";
-                        } else if (isVertical) {
-                            currentOrientation = "Vertical";
-                        } else {
-                            currentOrientation = "Unknown";
-                        }
-
-                        // Calculate center position and yaw offset
-                        double centerX = boundingRect.x + (boundingRect.width / 2.0);
-                        double centerY = boundingRect.y + (boundingRect.height / 2.0);
-                        currentCenter = new Point(centerX, centerY);
-
-                        double normalizedX = (centerX - (FRAME_WIDTH / 2.0)) / (FRAME_WIDTH / 2.0);
-                        elementYawOffset = normalizedX * (CAMERA_FOV_DEGREES / 2.0);
-
-                        // Set confidence based on how well it matches expected shape
-                        currentConfidence = solidity * 100; // 0-100%
-
-                        currentDetectedElement = "GameElement";
-                        currentRect = boundingRect;
-                        validDetection = true;
-
-                        // We found a valid game element, no need to check other contours
-                        break;
-                    }
-                }
+            // Skip if contour is too small or too large
+            if (area < MIN_CONTOUR_AREA || area > MAX_CONTOUR_AREA) {
+                continue;
             }
 
-            // Update detection history for stability
-            updateDetectionHistory(elementHistory, currentDetectedElement);
-            updateDetectionHistory(orientationHistory, currentOrientation);
+            // Approximate the contour with a polygon
+            MatOfPoint2f contour2f = new MatOfPoint2f(contour.toArray());
+            MatOfPoint2f approxCurve = new MatOfPoint2f();
+            double epsilon = 0.04 * Imgproc.arcLength(contour2f, true);
+            Imgproc.approxPolyDP(contour2f, approxCurve, epsilon, true);
 
-            if (validDetection) {
-                updateRectHistory(rectHistory, currentRect);
-                lastDetectedRect = currentRect;
-                lastDetectedCenter = currentCenter;
-            } else if (rectHistory.size() > 0) {
-                // If no detection in this frame but we had recent detections, use the last known position
-                // This provides smoother visualization when detection briefly fails
-                lastDetectedRect = getMostRecentRect(rectHistory);
-                if (lastDetectedRect != null) {
-                    lastDetectedCenter = new Point(
-                            lastDetectedRect.x + lastDetectedRect.width / 2.0,
-                            lastDetectedRect.y + lastDetectedRect.height / 2.0
-                    );
-                }
-            }
+            // Get bounding rectangle
+            Rect boundingRect = Imgproc.boundingRect(contour);
 
-            // Get most frequent values from history (temporal smoothing)
-            detectedElement = getMostFrequentValue(elementHistory, "None");
-            orientationType = getMostFrequentValue(orientationHistory, "Unknown");
+            // Calculate aspect ratio and solidity (shape metrics)
+            double aspectRatio = (double) boundingRect.width / boundingRect.height;
+            double rectArea = boundingRect.width * boundingRect.height;
+            double solidity = area / rectArea;
 
-            // Draw visualization
-            if (lastDetectedRect != null) {
-                // Animate highlight thickness for attention-grabbing effect
-                highlightThickness += animationDirection;
-                if (highlightThickness >= MAX_HIGHLIGHT_THICKNESS || highlightThickness <= MIN_HIGHLIGHT_THICKNESS) {
-                    animationDirection *= -1;
-                }
-
-                // Draw thick green border around the detected game element
-                Imgproc.rectangle(input,
-                        lastDetectedRect.tl(),
-                        lastDetectedRect.br(),
-                        HIGHLIGHT_COLOR,
-                        highlightThickness);
-
-                // Draw diagonal corners for enhanced visibility
-                int cornerLength = Math.min(lastDetectedRect.width, lastDetectedRect.height) / 4;
-
-                // Top-left corner
-                Imgproc.line(input,
-                        new Point(lastDetectedRect.x, lastDetectedRect.y),
-                        new Point(lastDetectedRect.x + cornerLength, lastDetectedRect.y),
-                        HIGHLIGHT_COLOR, highlightThickness);
-                Imgproc.line(input,
-                        new Point(lastDetectedRect.x, lastDetectedRect.y),
-                        new Point(lastDetectedRect.x, lastDetectedRect.y + cornerLength),
-                        HIGHLIGHT_COLOR, highlightThickness);
-
-                // Top-right corner
-                Imgproc.line(input,
-                        new Point(lastDetectedRect.x + lastDetectedRect.width, lastDetectedRect.y),
-                        new Point(lastDetectedRect.x + lastDetectedRect.width - cornerLength, lastDetectedRect.y),
-                        HIGHLIGHT_COLOR, highlightThickness);
-                Imgproc.line(input,
-                        new Point(lastDetectedRect.x + lastDetectedRect.width, lastDetectedRect.y),
-                        new Point(lastDetectedRect.x + lastDetectedRect.width, lastDetectedRect.y + cornerLength),
-                        HIGHLIGHT_COLOR, highlightThickness);
-
-                // Bottom-left corner
-                Imgproc.line(input,
-                        new Point(lastDetectedRect.x, lastDetectedRect.y + lastDetectedRect.height),
-                        new Point(lastDetectedRect.x + cornerLength, lastDetectedRect.y + lastDetectedRect.height),
-                        HIGHLIGHT_COLOR, highlightThickness);
-                Imgproc.line(input,
-                        new Point(lastDetectedRect.x, lastDetectedRect.y + lastDetectedRect.height),
-                        new Point(lastDetectedRect.x, lastDetectedRect.y + lastDetectedRect.height - cornerLength),
-                        HIGHLIGHT_COLOR, highlightThickness);
-
-                // Bottom-right corner
-                Imgproc.line(input,
-                        new Point(lastDetectedRect.x + lastDetectedRect.width, lastDetectedRect.y + lastDetectedRect.height),
-                        new Point(lastDetectedRect.x + lastDetectedRect.width - cornerLength, lastDetectedRect.y + lastDetectedRect.height),
-                        HIGHLIGHT_COLOR, highlightThickness);
-                Imgproc.line(input,
-                        new Point(lastDetectedRect.x + lastDetectedRect.width, lastDetectedRect.y + lastDetectedRect.height),
-                        new Point(lastDetectedRect.x + lastDetectedRect.width, lastDetectedRect.y + lastDetectedRect.height - cornerLength),
-                        HIGHLIGHT_COLOR, highlightThickness);
-
-                // Draw center point and target line
-                if (lastDetectedCenter != null) {
-                    // Center crosshair
-                    Imgproc.circle(input, lastDetectedCenter, 5, TARGET_LINE_COLOR, -1);
-                    Imgproc.line(input,
-                            new Point(lastDetectedCenter.x - 10, lastDetectedCenter.y),
-                            new Point(lastDetectedCenter.x + 10, lastDetectedCenter.y),
-                            TARGET_LINE_COLOR, 2);
-                    Imgproc.line(input,
-                            new Point(lastDetectedCenter.x, lastDetectedCenter.y - 10),
-                            new Point(lastDetectedCenter.x, lastDetectedCenter.y + 10),
-                            TARGET_LINE_COLOR, 2);
-
-                    // Line from center of screen to target
-                    Point screenCenter = new Point(FRAME_WIDTH / 2.0, FRAME_HEIGHT / 2.0);
-                    Imgproc.line(input, screenCenter, lastDetectedCenter, TARGET_LINE_COLOR, 2);
-
-                    // Draw angle indicator
-                    String angleText = String.format("%.1f°", elementYawOffset);
-                    Imgproc.putText(input, angleText,
-                            new Point((screenCenter.x + lastDetectedCenter.x) / 2,
-                                    (screenCenter.y + lastDetectedCenter.y) / 2 - 10),
-                            Imgproc.FONT_HERSHEY_SIMPLEX, 0.5, TARGET_LINE_COLOR, 2);
-                }
-
-                // Add label above detection
-                String labelText = detectedElement + " - " + orientationType;
-                Imgproc.putText(input, labelText,
-                        new Point(lastDetectedRect.x, lastDetectedRect.y - 10),
-                        Imgproc.FONT_HERSHEY_SIMPLEX, 0.6, HIGHLIGHT_COLOR, 2);
-            }
-
-            // Calculate and display FPS
-            frameCount++;
-            long currentTime = System.currentTimeMillis();
-            if (currentTime - lastFpsTimestamp > 1000) { // Every second
-                fps = frameCount * 1000.0 / (currentTime - lastFpsTimestamp);
-                frameCount = 0;
-                lastFpsTimestamp = currentTime;
-            }
-
-            // Draw status info
-            if (showDebugOverlay) {
-                // FPS counter
-                Imgproc.putText(input, String.format("FPS: %.1f", fps),
-                        new Point(10, FRAME_HEIGHT - 10),
-                        Imgproc.FONT_HERSHEY_SIMPLEX, 0.5, TEXT_COLOR, 1);
-
-                // Detection status bar
-                Imgproc.rectangle(input,
-                        new Point(0, 0),
-                        new Point(FRAME_WIDTH, 40),
-                        new Scalar(0, 0, 0, 180), -1);
-
-                if (validDetection || lastDetectedRect != null) {
-                    Imgproc.putText(input, String.format("DETECTED: %s - %s (Yaw: %.1f°)",
-                                    detectedElement, orientationType, elementYawOffset),
-                            new Point(10, 30),
-                            Imgproc.FONT_HERSHEY_SIMPLEX, 0.7, HIGHLIGHT_COLOR, 2);
+            // Check if contour is rectangular enough and has enough area
+            if (solidity > 0.7 && area > MIN_CONTOUR_AREA) {
+                // Determine orientation based on aspect ratio
+                if (Math.abs(aspectRatio - ASPECT_RATIO_HORIZONTAL) < Math.abs(aspectRatio - ASPECT_RATIO_VERTICAL)) {
+                    currentOrientation = "Horizontal";
                 } else {
-                    Imgproc.putText(input, "No Game Element Detected",
-                            new Point(10, 30),
-                            Imgproc.FONT_HERSHEY_SIMPLEX, 0.7, new Scalar(255, 0, 0), 2);
+                    currentOrientation = "Vertical";
                 }
 
-                // Show the threshold image in a corner for debugging
-                Mat smallThreshold = new Mat();
-                Imgproc.resize(thresholdMat, smallThreshold, new Size(FRAME_WIDTH/4, FRAME_HEIGHT/4));
-                Mat threshold3Channel = new Mat();
-                Imgproc.cvtColor(smallThreshold, threshold3Channel, Imgproc.COLOR_GRAY2RGB);
+                // Calculate center position and yaw offset
+                double centerX = boundingRect.x + (boundingRect.width / 2.0);
+                double centerY = boundingRect.y + (boundingRect.height / 2.0);
+                currentCenter = new Point(centerX, centerY);
 
-                // Overlay at bottom-right corner
-                threshold3Channel.copyTo(input.submat(
-                        FRAME_HEIGHT - smallThreshold.rows(), FRAME_HEIGHT,
-                        FRAME_WIDTH - smallThreshold.cols(), FRAME_WIDTH));
+                double normalizedX = (centerX - (FRAME_WIDTH / 2.0)) / (FRAME_WIDTH / 2.0);
+                elementYawOffset = normalizedX * (CAMERA_FOV_DEGREES / 2.0);
 
-                // Add debug overlay label
-                Imgproc.putText(input, "Threshold",
-                        new Point(FRAME_WIDTH - smallThreshold.cols(), FRAME_HEIGHT - smallThreshold.rows() - 5),
-                        Imgproc.FONT_HERSHEY_SIMPLEX, 0.5, TEXT_COLOR, 1);
+                // Set confidence based on solidity and aspect ratio match
+                double aspectRatioMatch;
+                if ("Horizontal".equals(currentOrientation)) {
+                    aspectRatioMatch = 1.0 - Math.min(1.0, Math.abs(aspectRatio - ASPECT_RATIO_HORIZONTAL) / ASPECT_RATIO_HORIZONTAL);
+                } else {
+                    aspectRatioMatch = 1.0 - Math.min(1.0, Math.abs(aspectRatio - ASPECT_RATIO_VERTICAL) / ASPECT_RATIO_VERTICAL);
+                }
 
-                smallThreshold.release();
-                threshold3Channel.release();
-            }
+                currentConfidence = (solidity * 0.5 + aspectRatioMatch * 0.5) * 100; // 0-100%
 
-            // Release memory
-            grayMat.release();
-            blurredMat.release();
-            thresholdMat.release();
-            cannyOutput.release();
-            hierarchy.release();
-
-            return input;
-        }
-
-        // Add a new detection to history, maintaining the history size
-        private void updateDetectionHistory(LinkedList<String> history, String newValue) {
-            if (history.size() >= DETECTION_HISTORY_SIZE) {
-                history.removeFirst();
-            }
-            history.addLast(newValue);
-        }
-
-        // Add a new rectangle to history, maintaining the history size
-        private void updateRectHistory(LinkedList<Rect> history, Rect newRect) {
-            if (newRect == null) return;
-
-            if (history.size() >= DETECTION_HISTORY_SIZE) {
-                history.removeFirst();
-            }
-            history.addLast(newRect.clone());
-        }
-
-        // Get most recent rectangle (for visualization when detection temporarily fails)
-        private Rect getMostRecentRect(LinkedList<Rect> history) {
-            if (history.isEmpty()) {
-                return null;
-            }
-            return history.getLast();
-        }
-
-        // Get the most frequent value in the history (for temporal smoothing)
-        private String getMostFrequentValue(LinkedList<String> history, String defaultValue) {
-            if (history.isEmpty()) {
-                return defaultValue;
-            }
-
-            Map<String, Integer> frequencyMap = new HashMap<>();
-            for (String item : history) {
-                frequencyMap.put(item, frequencyMap.getOrDefault(item, 0) + 1);
-            }
-
-            String mostFrequent = defaultValue;
-            int maxCount = 0;
-
-            for (Map.Entry<String, Integer> entry : frequencyMap.entrySet()) {
-                if (entry.getValue() > maxCount) {
-                    maxCount = entry.getValue();
-                    mostFrequent = entry.getKey();
+                if (currentConfidence > 60) {
+                    currentDetectedElement = "GameElement";
+                    currentRect = boundingRect;
+                    validDetection = true;
+                    break;
                 }
             }
-
-            return mostFrequent;
         }
 
-        public String getDetectedElement() {
-            return detectedElement;
+        // Update detection history for stability
+        updateDetectionHistory(elementHistory, currentDetectedElement);
+        updateDetectionHistory(orientationHistory, currentOrientation);
+        if (currentCenter != null) {
+            updatePointHistory(centerHistory, currentCenter);
         }
 
-        public double getElementYawOffset() {
-            return elementYawOffset;
+        // Get smoothed position by averaging recent detections
+        Point smoothedCenter = null;
+        if (!centerHistory.isEmpty()) {
+            smoothedCenter = getAveragePoint(centerHistory);
+            if (smoothedCenter != null) {
+                double normalizedX = (smoothedCenter.x - (FRAME_WIDTH / 2.0)) / (FRAME_WIDTH / 2.0);
+                elementYawOffset = normalizedX * (CAMERA_FOV_DEGREES / 2.0);
+            }
         }
 
-        public String getOrientationType() {
-            return orientationType;
+        // Update visualization parameters
+        if (validDetection) {
+            lastDetectedRect = currentRect;
+            lastDetectedCenter = smoothedCenter != null ? smoothedCenter : currentCenter;
+        } else if (!centerHistory.isEmpty()) {
+            // Use history for smoother visualization
+            lastDetectedCenter = smoothedCenter;
+
+            // Reconstruct rectangle from center point if we have a recent one
+            if (lastDetectedRect != null && smoothedCenter != null) {
+                int width = lastDetectedRect.width;
+                int height = lastDetectedRect.height;
+                lastDetectedRect = new Rect(
+                        (int)(smoothedCenter.x - width/2),
+                        (int)(smoothedCenter.y - height/2),
+                        width, height
+                );
+            }
         }
 
-        public double getConfidence() {
-            return confidence;
+        // Get most frequent values from history (temporal smoothing)
+        detectedElement = getMostFrequentValue(elementHistory, "None");
+        orientationType = getMostFrequentValue(orientationHistory, "Unknown");
+        confidence = currentConfidence;
+
+        // Draw visualization
+        if (lastDetectedRect != null && "GameElement".equals(detectedElement)) {
+            // Animate highlight thickness
+            highlightThickness += animationDirection;
+            if (highlightThickness >= MAX_HIGHLIGHT_THICKNESS || highlightThickness <= MIN_HIGHLIGHT_THICKNESS) {
+                animationDirection *= -1;
+            }
+
+            // Draw rectangle around the detected game element
+            Imgproc.rectangle(input, lastDetectedRect.tl(), lastDetectedRect.br(), HIGHLIGHT_COLOR, highlightThickness);
+
+            // Draw center point and target line
+            if (lastDetectedCenter != null) {
+                // Center crosshair
+                Imgproc.circle(input, lastDetectedCenter, 5, TARGET_LINE_COLOR, -1);
+                Imgproc.line(input,
+                        new Point(lastDetectedCenter.x - 10, lastDetectedCenter.y),
+                        new Point(lastDetectedCenter.x + 10, lastDetectedCenter.y),
+                        TARGET_LINE_COLOR, 2);
+                Imgproc.line(input,
+                        new Point(lastDetectedCenter.x, lastDetectedCenter.y - 10),
+                        new Point(lastDetectedCenter.x, lastDetectedCenter.y + 10),
+                        TARGET_LINE_COLOR, 2);
+
+                // Line from center of screen to target
+                Point screenCenter = new Point(FRAME_WIDTH / 2.0, FRAME_HEIGHT / 2.0);
+                Imgproc.line(input, screenCenter, lastDetectedCenter, TARGET_LINE_COLOR, 2);
+
+                // Draw angle indicator
+                String angleText = String.format("%.1f°", elementYawOffset);
+                Imgproc.putText(input, angleText,
+                        new Point((screenCenter.x + lastDetectedCenter.x) / 2,
+                                (screenCenter.y + lastDetectedCenter.y) / 2 - 10),
+                        Imgproc.FONT_HERSHEY_SIMPLEX, 0.5, TARGET_LINE_COLOR, 2);
+            }
+
+            // Add label above detection
+            String labelText = detectedElement + " - " + orientationType + " (" + String.format("%.0f%%", confidence) + ")";
+            Imgproc.putText(input, labelText,
+                    new Point(lastDetectedRect.x, lastDetectedRect.y - 10),
+                    Imgproc.FONT_HERSHEY_SIMPLEX, 0.6, HIGHLIGHT_COLOR, 2);
         }
 
-        // Toggle debug overlay
-        public void setShowDebugOverlay(boolean show) {
-            showDebugOverlay = show;
+        // Draw status info overlay
+        if (showDebugOverlay) {
+            // Status bar background
+            Imgproc.rectangle(input,
+                    new Point(0, 0),
+                    new Point(FRAME_WIDTH, 40),
+                    new Scalar(0, 0, 0, 180), -1);
+
+            if ("GameElement".equals(detectedElement)) {
+                Imgproc.putText(input, String.format("DETECTED: %s - %s (Yaw: %.1f°)",
+                                detectedElement, orientationType, elementYawOffset),
+                        new Point(10, 30),
+                        Imgproc.FONT_HERSHEY_SIMPLEX, 0.7, HIGHLIGHT_COLOR, 2);
+            } else {
+                Imgproc.putText(input, "No Game Element Detected",
+                        new Point(10, 30),
+                        Imgproc.FONT_HERSHEY_SIMPLEX, 0.7, new Scalar(255, 0, 0), 2);
+            }
+
+            // Show the color mask in a corner for debugging
+            Mat smallMask = new Mat();
+            Imgproc.resize(colorMask, smallMask, new Size(FRAME_WIDTH/4, FRAME_HEIGHT/4));
+            Mat mask3Channel = new Mat();
+            Imgproc.cvtColor(smallMask, mask3Channel, Imgproc.COLOR_GRAY2RGB);
+
+            // Overlay at bottom-right corner
+            mask3Channel.copyTo(input.submat(
+                    FRAME_HEIGHT - smallMask.rows(), FRAME_HEIGHT,
+                    FRAME_WIDTH - smallMask.cols(), FRAME_WIDTH));
+
+            // Add debug overlay label
+            Imgproc.putText(input, "Color Mask",
+                    new Point(FRAME_WIDTH - smallMask.cols(), FRAME_HEIGHT - smallMask.rows() - 5),
+                    Imgproc.FONT_HERSHEY_SIMPLEX, 0.5, TEXT_COLOR, 1);
+
+            // Release temporary mats
+            smallMask.release();
+            mask3Channel.release();
         }
+
+        // Release memory
+        hsvMat.release();
+        colorMask.release();
+        blurredMat.release();
+        hierarchy.release();
+
+        return input;
     }
+
+    // Utility methods for history tracking and smoothing
+    private void updateDetectionHistory(LinkedList<String> history, String newValue) {
+        if (history.size() >= DETECTION_HISTORY_SIZE) {
+            history.removeFirst();
+        }
+        history.addLast(newValue);
+    }
+
+    private void updatePointHistory(LinkedList<Point> history, Point newPoint) {
+        if (history.size() >= DETECTION_HISTORY_SIZE) {
+            history.removeFirst();
+        }
+        history.addLast(newPoint.clone());
+    }
+
+    private Point getAveragePoint(LinkedList<Point> history) {
+        if (history.isEmpty()) {
+            return null;
+        }
+
+        double sumX = 0, sumY = 0;
+        for (Point p : history) {
+            sumX += p.x;
+            sumY += p.y;
+        }
+
+        return new Point(sumX / history.size(), sumY / history.size());
+    }
+
+    private String getMostFrequentValue(LinkedList<String> history, String defaultValue) {
+        if (history.isEmpty()) {
+            return defaultValue;
+        }
+
+        // Count occurrences
+        java.util.Map<String, Integer> counts = new java.util.HashMap<>();
+        for (String s : history) {
+            counts.put(s, counts.getOrDefault(s, 0) + 1);
+        }
+
+        // Find most frequent
+        String mostFrequent = defaultValue;
+        int maxCount = 0;
+
+        for (java.util.Map.Entry<String, Integer> entry : counts.entrySet()) {
+            if (entry.getValue() > maxCount) {
+                maxCount = entry.getValue();
+                mostFrequent = entry.getKey();
+            }
+        }
+
+        return mostFrequent;
+    }
+
+    // Accessor methods
+    public String getDetectedElement() {
+        return detectedElement;
+    }
+
+    public double getElementYawOffset() {
+        return elementYawOffset;
+    }
+
+    public String getOrientationType() {
+        return orientationType;
+    }
+
+    public double getConfidence() {
+        return confidence;
+    }
+
+    public void setShowDebugOverlay(boolean show) {
+        showDebugOverlay = show;
+    }
+}
